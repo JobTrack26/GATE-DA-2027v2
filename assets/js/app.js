@@ -1,17 +1,17 @@
 /**
  * GATE DA 2027 Master Application Controller
- * High-Density Exam Preparation Portal
+ * Authentic GateXAIML Client-Side Single-Page Application
  */
 
 (function () {
   'use strict';
 
   let activeView = 'dashboard';
-  let activeSubjectId = 'calculus-opt';
-  let currentMainVideo = null;
+  let activeSubjectId = 'matrices';
+  let activeChapterFilter = null; // null = all, or chapter index number
 
   // Course Player view state
-  let playerSubjectId = 'calculus-opt';
+  let playerSubjectId = 'matrices';
   let playerChapterIdx = 0;
   let playerVideoIdx = 0;
 
@@ -287,7 +287,6 @@
       if (viewName === 'notes') GateApp.renderNotesView();
     },
 
-    
     /* ---------------- 145-DAY STUDY PLAN VIEW ---------------- */
     renderPlanView: function (filterPhaseId) {
       const container = document.getElementById('planViewContent');
@@ -339,14 +338,16 @@
         const weeksHtml = ph.weeks.map(w => {
           const daysHtml = w.dailyGoals.map(dg => {
             const isDone = localStorage.getItem('gx-plan:day-' + dg.day) === '1';
+            const chIdx = dg.chapterIdx !== undefined ? dg.chapterIdx : 0;
+            const vidId = dg.videoId || '';
             return `
               <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 14px; background:var(--bg-card); border:1px solid ${isDone ? 'var(--emerald)' : 'var(--border-color)'}; border-radius:var(--radius-sm); margin-bottom:8px; transition:var(--transition);">
                 <input type="checkbox" ${isDone ? 'checked' : ''} onchange="GateApp.togglePlanDay(${dg.day}, this.checked)" style="accent-color:var(--emerald); width:18px; height:18px; margin-top:3px; cursor:pointer; flex-shrink:0;" />
                 <div style="flex-grow:1; min-width:0;">
                   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                     <span style="font-size:0.82rem; font-weight:700; color:var(--accent-amber);">Day ${dg.day} • ${dg.date}</span>
-                    <button class="btn-secondary btn-sm" style="padding:2px 8px; font-size:0.72rem;" onclick="GateApp.showSubject('${dg.subjectId}')">
-                      <i class="fa-solid fa-play"></i> Open Subject
+                    <button class="btn-secondary btn-sm" style="padding:3px 10px; font-size:0.75rem;" onclick="GateApp.showSubject('${dg.subjectId}', ${chIdx}, '${vidId}')">
+                      <i class="fa-solid fa-circle-play" style="color:var(--accent-amber);"></i> Watch Lecture
                     </button>
                   </div>
                   <div style="font-size:0.86rem; margin-top:3px; ${isDone ? 'text-decoration:line-through; color:var(--text-faint);' : 'color:var(--text-main);'}">
@@ -431,9 +432,8 @@
       const subjects = window.GATE_DA_SUBJECTS || [];
       grid.innerHTML = subjects.map(s => {
         const p = GateApp.getSubjectProgress(s.id);
-        const firstVid = s.chapters && s.chapters[0] && s.chapters[0].videos[0];
         return `
-          <div class="subject-card">
+          <div class="subject-card" onclick="GateApp.showSubject('${s.id}')">
             <div class="subject-card-top">
               <div class="subject-icon">
                 <i class="fa-solid fa-brain"></i>
@@ -446,7 +446,7 @@
 
             <div class="subject-meta-chips">
               <div class="subject-meta-chip"><i class="fa-solid fa-video"></i> ${s.total_videos} Lectures</div>
-              <div class="subject-meta-chip"><i class="fa-solid fa-file-pdf"></i> PDF Handbook</div>
+              <div class="subject-meta-chip"><i class="fa-solid fa-file-pdf"></i> Official Handbook</div>
             </div>
 
             <div class="progress-container">
@@ -460,10 +460,10 @@
             </div>
 
             <div style="display:flex; gap:8px; margin-top:8px;">
-              <button class="btn-primary btn-sm" style="flex-grow:1; justify-content:center;" onclick="GateApp.showSubject('${s.id}')">
-                <i class="fa-solid fa-play"></i> Watch Lectures
+              <button class="btn-primary btn-sm" style="flex-grow:1; justify-content:center;" onclick="event.stopPropagation(); GateApp.showSubject('${s.id}')">
+                <i class="fa-solid fa-play"></i> Explore Subject
               </button>
-              <button class="btn-secondary btn-sm" onclick="GateApp.openPdfViewer('${s.local_pdf || s.remote_pdf}', '${s.title} - Official Handbook')">
+              <button class="btn-secondary btn-sm" onclick="event.stopPropagation(); GateApp.openPdfViewer('${s.local_pdf || s.remote_pdf}', '${s.title} - Official Handbook')">
                 <i class="fa-solid fa-book-open"></i> Handbook
               </button>
             </div>
@@ -472,10 +472,11 @@
       }).join('');
     },
 
-    /* ---------------- SUBJECT DETAIL VIEW WITH MASTER EMBEDDED PLAYER ---------------- */
-    showSubject: function (subjectId) {
+    /* ---------------- SUBJECT DETAIL VIEW (AUTHENTIC GATEXAIML INLINE EMBED) ---------------- */
+    showSubject: function (subjectId, targetChapterIdx, targetVidId) {
       activeSubjectId = subjectId;
       activeView = 'subject';
+      activeChapterFilter = targetChapterIdx !== undefined ? targetChapterIdx : null;
 
       // Update sidebar nav active
       document.querySelectorAll('.sidebar-nav .nav-link-item').forEach(el => el.classList.remove('active'));
@@ -496,11 +497,10 @@
       if (sidebar) sidebar.classList.remove('open');
       if (backdrop) backdrop.classList.remove('show');
 
-      GateApp.renderSubjectDetail(subjectId);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      GateApp.renderSubjectDetail(subjectId, targetChapterIdx, targetVidId);
     },
 
-    renderSubjectDetail: function (subjectId) {
+    renderSubjectDetail: function (subjectId, targetChapterIdx, targetVidId) {
       const subject = (window.GATE_DA_SUBJECTS || []).find(s => s.id === subjectId || s.topic_key === subjectId);
       if (!subject) return;
 
@@ -510,58 +510,56 @@
       const prog = GateApp.getSubjectProgress(subject.id);
       const pdfPath = subject.local_pdf || subject.remote_pdf;
 
-      // Pick first lecture as initial active main video
-      const firstCh = subject.chapters[0];
-      const firstVid = firstCh ? firstCh.videos[0] : null;
-      currentMainVideo = firstVid ? {
-        subjectId: subject.id,
-        chapterIdx: 0,
-        videoIdx: 0,
-        video: firstVid,
-        chapterTitle: firstCh.title
-      } : null;
-
       // Build quick jump pills
-      const pillsHtml = subject.chapters.map((ch, idx) => `
-        <div class="chapter-pill" onclick="GateApp.scrollToChapter(${idx})">
-          Ch. ${idx + 1}: ${ch.title}
+      const pillsHtml = `
+        <div class="chapter-pill ${activeChapterFilter === null ? 'active' : ''}" onclick="GateApp.filterSubjectChapter(null)">
+          All Chapters (${subject.total_chapters})
         </div>
-      `).join('');
+        ${subject.chapters.map((ch, idx) => `
+          <div class="chapter-pill ${activeChapterFilter === idx ? 'active' : ''}" onclick="GateApp.filterSubjectChapter(${idx})">
+            ${ch.title} (${ch.video_count})
+          </div>
+        `).join('')}
+      `;
 
       // Build chapter accordions
       const chaptersHtml = subject.chapters.map((ch, cIdx) => {
+        // If chapter filter active, hide non-matching chapters
+        const isFilteredOut = activeChapterFilter !== null && activeChapterFilter !== cIdx;
+        if (isFilteredOut) return '';
+
         let chapterDoneCount = 0;
         ch.videos.forEach(v => {
           if (GateApp.isWatched(v.id)) chapterDoneCount++;
         });
         const chPct = ch.videos.length ? Math.round((chapterDoneCount / ch.videos.length) * 100) : 0;
 
+        // Default open: targeted chapter, or first chapter if no target
+        const isOpen = targetChapterIdx !== undefined ? (targetChapterIdx === cIdx) : (activeChapterFilter === cIdx || (activeChapterFilter === null && cIdx === 0));
+
         const videosHtml = ch.videos.map((vid, vIdx) => {
           const isDone = GateApp.isWatched(vid.id);
           return `
             <div class="video-card ${isDone ? 'watched' : ''}" id="vcard-${vid.id}">
-              <!-- Thumbnail with Play button (Clicking plays in Master Player at top) -->
-              <div class="video-thumb" id="thumb-wrap-${vid.id}" onclick="GateApp.playInSubjectMasterPlayer('${subject.id}', ${cIdx}, ${vIdx})">
+              <!-- Thumbnail with Play overlay (Clicking embeds player inline right on card) -->
+              <div class="video-thumb" id="thumb-wrap-${vid.id}" data-video="${vid.id}" onclick="GateApp.playInlineVideo('${vid.id}')">
                 <img src="${vid.thumbnail}" alt="${vid.title}" loading="lazy" />
-                <div class="play-overlay-btn" title="Play Video">
-                  <i class="fa-solid fa-play"></i>
+                <div class="play-overlay-btn" title="Click to watch video lecture">
+                  <i class="fa-solid fa-circle-play" style="font-size:2.2rem; color:#fff; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));"></i>
                 </div>
               </div>
 
-              <div class="video-info">
-                <div class="video-title" title="${vid.title}">${vid.title}</div>
+              <div class="video-info" style="padding:10px 12px; display:flex; flex-direction:column; justify-content:space-between; flex-grow:1;">
+                <div class="video-title" title="${vid.title}" style="font-size:0.86rem; font-weight:600; line-height:1.35; margin-bottom:8px;">${vid.title}</div>
                 
-                <div class="video-bottom-meta">
-                  <label class="watch-check-label">
-                    <input type="checkbox" ${isDone ? 'checked' : ''} onchange="GateApp.handleVideoCheck('${vid.id}', this.checked, '${subject.id}')" />
+                <div class="video-bottom-meta" style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
+                  <label class="watch-check-label" style="display:flex; align-items:center; gap:6px; font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
+                    <input type="checkbox" ${isDone ? 'checked' : ''} onchange="GateApp.handleVideoCheck('${vid.id}', this.checked, '${subject.id}', ${cIdx})" style="accent-color:var(--emerald); width:15px; height:15px; cursor:pointer;" />
                     <span>Watched</span>
                   </label>
 
                   <div style="display:flex; gap:6px;">
-                    <button class="theater-mode-btn" title="Play in Master Player" onclick="GateApp.playInSubjectMasterPlayer('${subject.id}', ${cIdx}, ${vIdx})">
-                      <i class="fa-solid fa-play"></i> Play
-                    </button>
-                    <button class="theater-mode-btn" title="Open Fullscreen Theater Study Room" onclick="GatePlayer.openTheater('${subject.id}', ${cIdx}, ${vIdx})">
+                    <button class="theater-mode-btn" title="Open in Theater Focus Room" onclick="GatePlayer.openTheater('${subject.id}', ${cIdx}, ${vIdx})">
                       <i class="fa-solid fa-expand"></i> Theater
                     </button>
                   </div>
@@ -572,22 +570,25 @@
         }).join('');
 
         return `
-          <div class="chapter-card open" id="chapter-card-${cIdx}">
+          <div class="chapter-card ${isOpen ? 'open' : ''}" id="chapter-card-${cIdx}">
             <div class="chapter-header" onclick="GateApp.toggleChapter(${cIdx})">
               <div class="chapter-title-group">
                 <div class="chapter-num-badge">${cIdx + 1}</div>
                 <div>
                   <div class="chapter-title-text">${ch.title}</div>
-                  <div class="chapter-meta-sub">${ch.video_count} lectures • ${chapterDoneCount}/${ch.video_count} watched</div>
+                  <div class="chapter-meta-sub">${ch.video_count} lectures • <span id="ch-prog-text-${cIdx}">${chapterDoneCount}/${ch.video_count} watched</span></div>
                 </div>
               </div>
 
               <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="progress-track" style="width:100px; height:6px; background:var(--bg-hover);">
+                  <div class="progress-fill" id="ch-prog-fill-${cIdx}" style="width: ${chPct}%;"></div>
+                </div>
                 <i class="fa-solid fa-chevron-down chapter-collapse-btn"></i>
               </div>
             </div>
 
-            <div class="chapter-body">
+            <div class="chapter-body" style="display:${isOpen ? 'block' : 'none'};">
               <div class="videos-grid">
                 ${videosHtml}
               </div>
@@ -598,9 +599,9 @@
 
       container.innerHTML = `
         <div class="hero-banner" style="margin-bottom: 20px;">
-          <div class="hero-tag"><i class="fa-solid fa-graduation-cap"></i> GATE DA Official Track</div>
+          <div class="hero-tag"><i class="fa-solid fa-graduation-cap"></i> GATE DA Core Track</div>
           <h1 class="hero-title">${subject.title}</h1>
-          <p class="hero-subtitle">${subject.description || 'Master all topics for GATE DA 2027 through structured video lectures and official textbooks.'}</p>
+          <p class="hero-subtitle">${subject.description || 'Curated video lectures and complete official textbooks for GATE DA 2027.'}</p>
 
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px;">
             <button class="btn-primary" onclick="GateApp.openPdfViewer('${pdfPath}', '${subject.title} - Official GATE DA Handbook')">
@@ -609,8 +610,8 @@
             <a class="btn-secondary" href="${pdfPath}" download target="_blank">
               <i class="fa-solid fa-download"></i> Download PDF
             </a>
-            <button class="btn-secondary" onclick="GatePlayer.openTheater('${subject.id}', 0, 0)">
-              <i class="fa-solid fa-tv"></i> Theater Focus Room
+            <button class="btn-secondary" onclick="GateApp.showView('player')">
+              <i class="fa-solid fa-circle-play"></i> Open in Course Player
             </button>
           </div>
 
@@ -625,55 +626,6 @@
           </div>
         </div>
 
-        <!-- ==================== EMBEDDED MASTER VIDEO PLAYER ==================== -->
-        <div class="hero-banner" id="subjectMasterPlayerSection" style="padding: 20px; background: var(--bg-card); margin-bottom: 24px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <div>
-              <div style="font-size: 0.75rem; color: var(--accent-amber); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;" id="mainPlayerChapterBadge">
-                ${firstCh ? firstCh.title : 'Lecture Player'}
-              </div>
-              <h2 style="font-size: 1.25rem; font-weight: 700;" id="mainPlayerVideoTitle">
-                ${firstVid ? firstVid.title : 'Select a lecture below to play'}
-              </h2>
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <button class="btn-secondary btn-sm" id="mainPlayerWatchedToggleBtn" onclick="GateApp.toggleMainPlayerWatched()">
-                <i class="fa-regular fa-circle"></i> Mark as Done
-              </button>
-              <button class="btn-secondary btn-sm" onclick="GateApp.openMainVideoInTheater()" title="Expand to Theater Mode">
-                <i class="fa-solid fa-expand"></i> Full Theater
-              </button>
-            </div>
-          </div>
-
-          <!-- 16:9 Responsive Embed Player -->
-          <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: 580px; background: #000; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow);">
-            <iframe id="mainSubjectPlayerIframe" 
-                    src="https://www.youtube.com/embed/${firstVid ? firstVid.id : ''}?autoplay=0&rel=0&modestbranding=1" 
-                    style="width: 100%; height: 100%; border: 0;" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowfullscreen>
-            </iframe>
-          </div>
-
-          <!-- Video Navigation Bar -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 10px;">
-            <div style="display: flex; gap: 8px;">
-              <button class="btn-secondary btn-sm" onclick="GateApp.prevMainVideo()">
-                <i class="fa-solid fa-backward-step"></i> Previous
-              </button>
-              <button class="btn-primary btn-sm" onclick="GateApp.nextMainVideo()">
-                Next Lecture <i class="fa-solid fa-forward-step"></i>
-              </button>
-            </div>
-
-            <div style="font-size: 0.8rem; color: var(--text-muted);">
-              <i class="fa-solid fa-circle-info"></i> Click any video card in the chapters below to switch lectures instantly.
-            </div>
-          </div>
-        </div>
-
         <div class="chapter-pills-row">
           ${pillsHtml}
         </div>
@@ -683,146 +635,88 @@
         </div>
       `;
 
-      if (firstVid) {
-        GateApp.updateMainPlayerWatchedButton(firstVid.id);
-      }
-    },
-
-    playInSubjectMasterPlayer: function (subjectId, cIdx, vIdx) {
-      const subject = (window.GATE_DA_SUBJECTS || []).find(s => s.id === subjectId || s.topic_key === subjectId);
-      if (!subject) return;
-      const chapter = subject.chapters[cIdx];
-      if (!chapter) return;
-      const video = chapter.videos[vIdx];
-      if (!video) return;
-
-      currentMainVideo = {
-        subjectId,
-        chapterIdx: cIdx,
-        videoIdx: vIdx,
-        video,
-        chapterTitle: chapter.title
-      };
-
-      // Update Iframe
-      const iframe = document.getElementById('mainSubjectPlayerIframe');
-      if (iframe) {
-        iframe.src = `https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`;
-      }
-
-      // Update Labels
-      const badgeEl = document.getElementById('mainPlayerChapterBadge');
-      const titleEl = document.getElementById('mainPlayerVideoTitle');
-      if (badgeEl) badgeEl.textContent = `${subject.title} • ${chapter.title}`;
-      if (titleEl) titleEl.textContent = video.title;
-
-      GateApp.updateMainPlayerWatchedButton(video.id);
-
-      // Scroll smoothly to player
-      const playerSec = document.getElementById('subjectMasterPlayerSection');
-      if (playerSec) {
-        playerSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    },
-
-    updateMainPlayerWatchedButton: function (vidId) {
-      const btn = document.getElementById('mainPlayerWatchedToggleBtn');
-      if (!btn) return;
-      const isDone = GateApp.isWatched(vidId);
-      if (isDone) {
-        btn.innerHTML = '<i class="fa-solid fa-circle-check" style="color:var(--emerald);"></i> Watched';
-        btn.classList.add('active');
+      // Auto-scroll and play targeted video if specified
+      if (targetVidId) {
+        setTimeout(() => {
+          const targetCard = document.getElementById(`vcard-${targetVidId}`);
+          if (targetCard) {
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetCard.style.borderColor = 'var(--accent-amber)';
+            const thumb = document.getElementById(`thumb-wrap-${targetVidId}`);
+            if (thumb) GateApp.playInlineVideo(targetVidId);
+          }
+        }, 200);
+      } else if (targetChapterIdx !== undefined) {
+        setTimeout(() => {
+          const chCard = document.getElementById(`chapter-card-${targetChapterIdx}`);
+          if (chCard) chCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
       } else {
-        btn.innerHTML = '<i class="fa-regular fa-circle"></i> Mark as Done';
-        btn.classList.remove('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     },
 
-    toggleMainPlayerWatched: function () {
-      if (!currentMainVideo || !currentMainVideo.video) return;
-      const vidId = currentMainVideo.video.id;
-      const current = GateApp.isWatched(vidId);
-      GateApp.setWatched(vidId, !current);
-      GateApp.updateMainPlayerWatchedButton(vidId);
-      
-      // Update card in chapter list
-      const card = document.getElementById(`vcard-${vidId}`);
-      if (card) {
-        card.classList.toggle('watched', !current);
-        const cb = card.querySelector('input[type="checkbox"]');
-        if (cb) cb.checked = !current;
-      }
-      GateApp.refreshAllProgress();
+    /* ---------------- INLINE EMBED PLAYER (GATEXAIML FACADE) ---------------- */
+    playInlineVideo: function (vidId) {
+      const container = document.getElementById(`thumb-wrap-${vidId}`);
+      if (!container || !vidId) return;
+
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed/${vidId}?autoplay=1&rel=0&modestbranding=1`;
+      iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.style.width = '100%';
+      iframe.style.aspectRatio = '16/9';
+      iframe.style.border = '0';
+      iframe.style.borderRadius = 'var(--radius-sm)';
+
+      container.innerHTML = '';
+      container.appendChild(iframe);
+      container.onclick = null; // remove click listener once replaced
     },
 
-    nextMainVideo: function () {
-      if (!currentMainVideo) return;
-      const subject = (window.GATE_DA_SUBJECTS || []).find(s => s.id === currentMainVideo.subjectId);
-      if (!subject) return;
-
-      // Flatten
-      const flatList = [];
-      subject.chapters.forEach((ch, cI) => {
-        ch.videos.forEach((v, vI) => {
-          flatList.push({ cI, vI, v });
-        });
-      });
-
-      const currentIdx = flatList.findIndex(item => item.v.id === currentMainVideo.video.id);
-      if (currentIdx !== -1 && currentIdx < flatList.length - 1) {
-        const next = flatList[currentIdx + 1];
-        GateApp.playInSubjectMasterPlayer(subject.id, next.cI, next.vI);
-      }
-    },
-
-    prevMainVideo: function () {
-      if (!currentMainVideo) return;
-      const subject = (window.GATE_DA_SUBJECTS || []).find(s => s.id === currentMainVideo.subjectId);
-      if (!subject) return;
-
-      const flatList = [];
-      subject.chapters.forEach((ch, cI) => {
-        ch.videos.forEach((v, vI) => {
-          flatList.push({ cI, vI, v });
-        });
-      });
-
-      const currentIdx = flatList.findIndex(item => item.v.id === currentMainVideo.video.id);
-      if (currentIdx > 0) {
-        const prev = flatList[currentIdx - 1];
-        GateApp.playInSubjectMasterPlayer(subject.id, prev.cI, prev.vI);
-      }
-    },
-
-    openMainVideoInTheater: function () {
-      if (!currentMainVideo) return;
-      GatePlayer.openTheater(currentMainVideo.subjectId, currentMainVideo.chapterIdx, currentMainVideo.videoIdx);
+    filterSubjectChapter: function (cIdx) {
+      activeChapterFilter = cIdx;
+      GateApp.renderSubjectDetail(activeSubjectId, cIdx);
     },
 
     toggleChapter: function (cIdx) {
       const card = document.getElementById(`chapter-card-${cIdx}`);
-      if (card) card.classList.toggle('open');
-    },
+      if (!card) return;
+      const body = card.querySelector('.chapter-body');
+      const isOpen = card.classList.contains('open');
 
-    scrollToChapter: function (cIdx) {
-      const card = document.getElementById(`chapter-card-${cIdx}`);
-      if (card) {
+      if (isOpen) {
+        card.classList.remove('open');
+        if (body) body.style.display = 'none';
+      } else {
         card.classList.add('open');
-        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (body) body.style.display = 'block';
       }
     },
 
-    handleVideoCheck: function (vidId, isChecked, subjectId) {
+    handleVideoCheck: function (vidId, isChecked, subjectId, cIdx) {
       GateApp.setWatched(vidId, isChecked);
       const card = document.getElementById(`vcard-${vidId}`);
       if (card) card.classList.toggle('watched', isChecked);
-      if (currentMainVideo && currentMainVideo.video && currentMainVideo.video.id === vidId) {
-        GateApp.updateMainPlayerWatchedButton(vidId);
+
+      // Update chapter counter
+      const subject = (window.GATE_DA_SUBJECTS || []).find(s => s.id === subjectId);
+      if (subject && subject.chapters[cIdx]) {
+        const ch = subject.chapters[cIdx];
+        let done = 0;
+        ch.videos.forEach(v => { if (GateApp.isWatched(v.id)) done++; });
+        const pct = ch.videos.length ? Math.round((done / ch.videos.length) * 100) : 0;
+        const textEl = document.getElementById(`ch-prog-text-${cIdx}`);
+        const fillEl = document.getElementById(`ch-prog-fill-${cIdx}`);
+        if (textEl) textEl.textContent = `${done}/${ch.video_count} watched`;
+        if (fillEl) fillEl.style.width = `${pct}%`;
       }
+
       GateApp.refreshAllProgress();
     },
 
-    /* ---------------- DEDICATED LIVE COURSE PLAYER VIEW ---------------- */
+    /* ---------------- DEDICATED COURSE PLAYER VIEW ---------------- */
     renderCoursePlayer: function () {
       const container = document.getElementById('playerViewContent');
       if (!container) return;
@@ -835,35 +729,30 @@
       const chapter = subject.chapters[playerChapterIdx] || subject.chapters[0];
       const video = chapter ? (chapter.videos[playerVideoIdx] || chapter.videos[0]) : null;
 
-      // Flatten current subject videos
-      const allVideos = [];
-      subject.chapters.forEach((ch, cI) => {
-        ch.videos.forEach((v, vI) => {
-          allVideos.push({
-            ...v,
-            chapterTitle: ch.title,
-            cI,
-            vI
-          });
-        });
-      });
+      // Filtered videos for playlist (by current chapter)
+      const currentChapterVideos = chapter ? chapter.videos : [];
 
       // Subject select options
       const subjOptionsHtml = subjects.map(s => `
         <option value="${s.id}" ${s.id === playerSubjectId ? 'selected' : ''}>${s.title} (${s.total_videos} videos)</option>
       `).join('');
 
-      // Playlist items
-      const playlistHtml = allVideos.map((v, idx) => {
+      // Chapter select options
+      const chapOptionsHtml = subject.chapters.map((ch, idx) => `
+        <option value="${idx}" ${idx === playerChapterIdx ? 'selected' : ''}>${ch.title} (${ch.video_count} videos)</option>
+      `).join('');
+
+      // Playlist items (chapter focused)
+      const playlistHtml = currentChapterVideos.map((v, idx) => {
         const isCurrent = video && v.id === video.id;
         const isDone = GateApp.isWatched(v.id);
         return `
-          <div class="playlist-item ${isCurrent ? 'active' : ''}" onclick="GateApp.selectCoursePlayerVideo(${v.cI}, ${v.vI})" style="padding:8px 10px;">
-            <img src="${v.thumbnail}" class="playlist-item-thumb" style="width:68px;" alt="" />
-            <div class="playlist-item-info">
-              <div class="playlist-item-title" style="font-size:0.82rem;">${v.title}</div>
-              <div style="font-size:0.7rem; color:var(--text-faint); display:flex; gap:6px;">
-                <span>${v.chapterTitle}</span>
+          <div class="playlist-item ${isCurrent ? 'active' : ''}" onclick="GateApp.selectCoursePlayerVideo(${idx})" style="padding:8px 10px; cursor:pointer; display:flex; gap:10px; align-items:center; border-radius:var(--radius-sm); margin-bottom:6px; background:${isCurrent ? 'var(--bg-hover)' : 'transparent'}; border:1px solid ${isCurrent ? 'var(--accent-amber)' : 'transparent'};">
+            <img src="${v.thumbnail}" class="playlist-item-thumb" style="width:68px; aspect-ratio:16/9; object-fit:cover; border-radius:4px;" alt="" />
+            <div class="playlist-item-info" style="min-width:0; flex-grow:1;">
+              <div class="playlist-item-title" style="font-size:0.82rem; font-weight:600; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${v.title}</div>
+              <div style="font-size:0.7rem; color:var(--text-faint); display:flex; gap:6px; align-items:center; margin-top:2px;">
+                <span>${chapter.title}</span>
                 ${isDone ? '<i class="fa-solid fa-check" style="color:var(--emerald);"></i>' : ''}
               </div>
             </div>
@@ -877,18 +766,20 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
           <div>
             <div style="font-size:0.75rem; color:var(--accent-amber); font-weight:700; text-transform:uppercase;">LIVE COURSE PLAYER</div>
-            <h1 style="font-size:1.4rem; font-weight:800;">${subject.title}</h1>
+            <h1 style="font-size:1.35rem; font-weight:800; margin-top:2px;" id="coursePlayerMainHeading">${subject.title}</h1>
           </div>
 
-          <div style="display:flex; align-items:center; gap:10px;">
-            <label style="font-size:0.85rem; color:var(--text-muted); font-weight:600;">Subject:</label>
-            <select style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:8px 12px; font-size:0.88rem; outline:none;" onchange="GateApp.switchCoursePlayerSubject(this.value)">
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <select id="coursePlayerSubjSelect" style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:8px 12px; font-size:0.85rem; outline:none;" onchange="GateApp.switchCoursePlayerSubject(this.value)">
               ${subjOptionsHtml}
+            </select>
+            <select id="coursePlayerChapSelect" style="background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:8px 12px; font-size:0.85rem; outline:none;" onchange="GateApp.switchCoursePlayerChapter(parseInt(this.value, 10))">
+              ${chapOptionsHtml}
             </select>
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 360px; gap:20px; @media(max-width:1024px){grid-template-columns:1fr;}">
+        <div style="display:grid; grid-template-columns: 1fr 340px; gap:20px;">
           <!-- Video Stage -->
           <div>
             <div style="width:100%; aspect-ratio:16/9; background:#000; border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow); margin-bottom:14px;">
@@ -896,7 +787,7 @@
             </div>
 
             <!-- Controls bar -->
-            <div class="player-controls-bar">
+            <div class="player-controls-bar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <button class="btn-secondary btn-sm" onclick="GateApp.prevCoursePlayerVideo()">
                   <i class="fa-solid fa-backward-step"></i> Previous
@@ -909,7 +800,7 @@
                 </button>
               </div>
 
-              <div style="font-size:0.85rem; font-weight:600; color:var(--text-main);">
+              <div style="font-size:0.85rem; font-weight:700; color:var(--text-main);" id="coursePlayerVideoTitleText">
                 ${video ? video.title : ''}
               </div>
             </div>
@@ -917,20 +808,20 @@
             <!-- Personal Notes Pad for this Video -->
             <div class="stat-card" style="flex-direction:column; align-items:flex-start; margin-top:16px;">
               <div style="display:flex; justify-content:space-between; width:100%; margin-bottom:8px;">
-                <span style="font-size:0.85rem; font-weight:700;"><i class="fa-solid fa-pencil" style="color:var(--accent-amber);"></i> Lecture Study Notes</span>
+                <span style="font-size:0.85rem; font-weight:700;"><i class="fa-solid fa-pencil" style="color:var(--accent-amber);"></i> Personal Lecture Study Notes</span>
                 <span style="font-size:0.75rem; color:var(--emerald); font-weight:600;" id="coursePlayerNotesStatus"></span>
               </div>
-              <textarea id="coursePlayerNotesInput" class="notes-textarea" placeholder="Take personal study notes for this lecture (auto-saved to your study journal)..." oninput="GateApp.saveCoursePlayerNotes('${video ? video.id : ''}')"></textarea>
+              <textarea id="coursePlayerNotesInput" class="notes-textarea" placeholder="Take notes while watching (auto-saved to your local study journal)..." oninput="GateApp.saveCoursePlayerNotes('${video ? video.id : ''}')"></textarea>
             </div>
           </div>
 
           <!-- Playlist Sidebar -->
-          <div class="stat-card" style="flex-direction:column; align-items:flex-start; padding:14px; height:calc(100vh - 220px); min-height:550px;">
-            <div style="font-size:0.9rem; font-weight:700; margin-bottom:12px; display:flex; justify-content:space-between; width:100%;">
-              <span><i class="fa-solid fa-list-ul" style="color:var(--accent-amber);"></i> Course Lectures</span>
-              <span class="brand-badge">${allVideos.length} Videos</span>
+          <div class="stat-card" style="flex-direction:column; align-items:flex-start; padding:14px; height:calc(100vh - 220px); min-height:500px;">
+            <div style="font-size:0.88rem; font-weight:700; margin-bottom:12px; display:flex; justify-content:space-between; width:100%;">
+              <span><i class="fa-solid fa-list-ul" style="color:var(--accent-amber);"></i> ${chapter ? chapter.title : 'Lectures'}</span>
+              <span class="brand-badge">${currentChapterVideos.length} Videos</span>
             </div>
-            <div style="overflow-y:auto; width:100%; flex-grow:1;">
+            <div style="overflow-y:auto; width:100%; flex-grow:1;" id="coursePlayerPlaylistContainer">
               ${playlistHtml}
             </div>
           </div>
@@ -952,49 +843,72 @@
       GateApp.renderCoursePlayer();
     },
 
-    selectCoursePlayerVideo: function (cI, vI) {
-      playerChapterIdx = cI;
-      playerVideoIdx = vI;
+    switchCoursePlayerChapter: function (cIdx) {
+      playerChapterIdx = cIdx;
+      playerVideoIdx = 0;
       GateApp.renderCoursePlayer();
+    },
+
+    selectCoursePlayerVideo: function (vIdx) {
+      playerVideoIdx = vIdx;
+      const subject = (window.GATE_DA_SUBJECTS || []).find(s => s.id === playerSubjectId);
+      if (!subject) return;
+      const chapter = subject.chapters[playerChapterIdx];
+      if (!chapter) return;
+      const video = chapter.videos[vIdx];
+      if (!video) return;
+
+      // Update iframe smoothly without re-rendering entire view
+      const iframe = document.getElementById('liveCourseIframe');
+      if (iframe) iframe.src = `https://www.youtube.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`;
+
+      const titleEl = document.getElementById('coursePlayerVideoTitleText');
+      if (titleEl) titleEl.textContent = video.title;
+
+      const isWatched = GateApp.isWatched(video.id);
+      const watchedBtn = document.getElementById('coursePlayerWatchedBtn');
+      if (watchedBtn) {
+        watchedBtn.innerHTML = `<i class="${isWatched ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}" style="${isWatched ? 'color:var(--emerald);' : ''}"></i> ${isWatched ? 'Watched' : 'Mark as Done'}`;
+        watchedBtn.setAttribute('onclick', `GateApp.toggleCoursePlayerWatched('${video.id}')`);
+      }
+
+      // Update active class in playlist
+      document.querySelectorAll('#coursePlayerPlaylistContainer .playlist-item').forEach((el, idx) => {
+        el.classList.toggle('active', idx === vIdx);
+      });
+
+      // Load notes
+      const notesInput = document.getElementById('coursePlayerNotesInput');
+      if (notesInput) {
+        notesInput.value = localStorage.getItem(`gx-note:${video.id}`) || '';
+        notesInput.setAttribute('oninput', `GateApp.saveCoursePlayerNotes('${video.id}')`);
+      }
     },
 
     nextCoursePlayerVideo: function () {
       const subject = (window.GATE_DA_SUBJECTS || []).find(s => s.id === playerSubjectId);
-      if (!subject) return;
+      if (!subject || !subject.chapters[playerChapterIdx]) return;
+      const chapter = subject.chapters[playerChapterIdx];
 
-      const allVideos = [];
-      subject.chapters.forEach((ch, cI) => {
-        ch.videos.forEach((v, vI) => {
-          allVideos.push({ cI, vI });
-        });
-      });
-
-      const currentFlatIdx = allVideos.findIndex(item => item.cI === playerChapterIdx && item.vI === playerVideoIdx);
-      if (currentFlatIdx !== -1 && currentFlatIdx < allVideos.length - 1) {
-        const next = allVideos[currentFlatIdx + 1];
-        playerChapterIdx = next.cI;
-        playerVideoIdx = next.vI;
+      if (playerVideoIdx < chapter.videos.length - 1) {
+        GateApp.selectCoursePlayerVideo(playerVideoIdx + 1);
+      } else if (playerChapterIdx < subject.chapters.length - 1) {
+        playerChapterIdx++;
+        playerVideoIdx = 0;
         GateApp.renderCoursePlayer();
       }
     },
 
     prevCoursePlayerVideo: function () {
-      const subject = (window.GATE_DA_SUBJECTS || []).find(s => s.id === playerSubjectId);
-      if (!subject) return;
-
-      const allVideos = [];
-      subject.chapters.forEach((ch, cI) => {
-        ch.videos.forEach((v, vI) => {
-          allVideos.push({ cI, vI });
-        });
-      });
-
-      const currentFlatIdx = allVideos.findIndex(item => item.cI === playerChapterIdx && item.vI === playerVideoIdx);
-      if (currentFlatIdx > 0) {
-        const prev = allVideos[currentFlatIdx - 1];
-        playerChapterIdx = prev.cI;
-        playerVideoIdx = prev.vI;
-        GateApp.renderCoursePlayer();
+      if (playerVideoIdx > 0) {
+        GateApp.selectCoursePlayerVideo(playerVideoIdx - 1);
+      } else if (playerChapterIdx > 0) {
+        const subject = (window.GATE_DA_SUBJECTS || []).find(s => s.id === playerSubjectId);
+        if (subject) {
+          playerChapterIdx--;
+          playerVideoIdx = (subject.chapters[playerChapterIdx].videos.length - 1);
+          GateApp.renderCoursePlayer();
+        }
       }
     },
 
@@ -1002,7 +916,7 @@
       if (!vidId) return;
       const current = GateApp.isWatched(vidId);
       GateApp.setWatched(vidId, !current);
-      GateApp.renderCoursePlayer();
+      GateApp.selectCoursePlayerVideo(playerVideoIdx);
       GateApp.refreshAllProgress();
     },
 
@@ -1093,10 +1007,18 @@
         const topicsHtml = (sec.topics || []).map(t => {
           const isDone = localStorage.getItem(`gx-syl:${t.id}`) === '1';
           return `
-            <div style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 6px;">
-              <input type="checkbox" ${isDone ? 'checked' : ''} onchange="GateApp.toggleSyllabusTopic('${t.id}', this.checked)" style="accent-color: var(--emerald); width: 16px; height: 16px; cursor: pointer;" />
-              <span style="font-size: 0.86rem; ${isDone ? 'text-decoration: line-through; color: var(--text-faint);' : 'color: var(--text-main);'} flex-grow: 1;">${t.title}</span>
-              ${t.highYield ? '<span class="brand-badge" style="font-size: 0.65rem; padding: 2px 6px;">High Yield</span>' : ''}
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 8px;">
+              <div style="display: flex; align-items: center; gap: 10px; flex-grow: 1;">
+                <input type="checkbox" ${isDone ? 'checked' : ''} onchange="GateApp.toggleSyllabusTopic('${t.id}', this.checked)" style="accent-color: var(--emerald); width: 16px; height: 16px; cursor: pointer; flex-shrink:0;" />
+                <span style="font-size: 0.88rem; ${isDone ? 'text-decoration: line-through; color: var(--text-faint);' : 'color: var(--text-main);'} flex-grow: 1;">${t.title}</span>
+                ${t.highYield ? '<span class="brand-badge" style="font-size: 0.65rem; padding: 2px 6px;">High Yield</span>' : ''}
+              </div>
+
+              ${t.subjectId ? `
+                <button class="btn-secondary btn-sm" style="white-space:nowrap; font-size:0.75rem; padding:3px 10px;" onclick="GateApp.showSubject('${t.subjectId}', ${t.chapterIdx})">
+                  <i class="fa-solid fa-circle-play" style="color:var(--accent-amber);"></i> Watch Lectures
+                </button>
+              ` : ''}
             </div>
           `;
         }).join('');
@@ -1109,7 +1031,7 @@
                 <div style="font-size: 0.8rem; color: var(--accent-amber); font-weight: 600;">Expected: ${sec.weightage} • ${sec.badge}</div>
               </div>
             </div>
-            <div class="chapter-body" style="display: block;">
+            <div class="chapter-body" style="display: block; padding:14px;">
               ${topicsHtml}
             </div>
           </div>
@@ -1148,27 +1070,30 @@
             <span class="brand-badge">${r.targetCompletion}</span>
           </div>
           <p style="font-size: 0.88rem; color: var(--text-main); margin-bottom: 12px;">${r.focus}</p>
-          <ul style="padding-left: 20px; font-size: 0.84rem; color: var(--text-muted); line-height: 1.6;">
-            ${r.milestones.map(m => `<li>${m}</li>`).join('')}
-          </ul>
         </div>
       `).join('');
 
       container.innerHTML = `
         <div class="hero-banner">
-          <div class="hero-tag"><i class="fa-solid fa-compass"></i> Strategy Blueprint</div>
-          <h1 class="hero-title">Official GATE DA 2027 Syllabus & Strategy</h1>
-          <p class="hero-subtitle">Section-by-section breakdown, subject weightage based on GATE DA 2024 & 2025 examinations, and a 4-phase master roadmap to score 70+ marks.</p>
+          <div class="hero-tag"><i class="fa-solid fa-compass"></i> Strategy Guide</div>
+          <h1 class="hero-title">GATE DA 2027 Syllabus & Strategy Guide</h1>
+          <p class="hero-subtitle">Complete syllabus topics mapped to high-yield weights and interactive progress checkboxes. Click "Watch Lectures" to jump directly into each topic's lecture series.</p>
         </div>
 
-        <h3 class="section-title" style="margin-bottom: 14px;"><i class="fa-solid fa-chart-pie" style="color:var(--accent-amber);"></i> Subject-Wise Weightage Analysis</h3>
+        <div class="section-heading-row">
+          <h3 class="section-title"><i class="fa-solid fa-chart-pie" style="color:var(--accent-amber);"></i> Subject-Wise Marks Weightage Analysis</h3>
+        </div>
         ${weightageTableHtml}
 
-        <h3 class="section-title" style="margin-bottom: 14px;"><i class="fa-solid fa-road" style="color:var(--emerald);"></i> 4-Phase Master Preparation Roadmap</h3>
-        <div style="margin-bottom: 28px;">${roadmapHtml}</div>
-
-        <h3 class="section-title" style="margin-bottom: 14px;"><i class="fa-solid fa-list-check" style="color:var(--blue);"></i> Interactive Topic-by-Topic Syllabus Tracker</h3>
+        <div class="section-heading-row">
+          <h3 class="section-title"><i class="fa-solid fa-list-check" style="color:var(--accent-amber);"></i> Detailed Topic-By-Topic Checklist</h3>
+        </div>
         ${sectionsHtml}
+
+        <div class="section-heading-row" style="margin-top:32px;">
+          <h3 class="section-title"><i class="fa-solid fa-route" style="color:var(--accent-amber);"></i> 4-Phase Preparation Roadmap</h3>
+        </div>
+        ${roadmapHtml}
       `;
     },
 
@@ -1181,33 +1106,34 @@
       GateApp.renderSyllabus();
     },
 
-    /* ---------------- FORMULAS VIEW ---------------- */
+    /* ---------------- FORMULA CHEATSHEETS VIEW ---------------- */
     renderFormulas: function () {
       const container = document.getElementById('formulasViewContent');
       if (!container) return;
 
       const formulasData = window.GATE_DA_FORMULAS || [];
-
       let html = `
         <div class="hero-banner">
-          <div class="hero-tag"><i class="fa-solid fa-square-root-variable"></i> Rapid Revision Sheets</div>
-          <h1 class="hero-title">GATE DA High-Yield Formula Cheatsheets</h1>
-          <p class="hero-subtitle">Essential mathematical identities, theorems, machine learning loss functions, and database formulas for quick daily morning revision.</p>
+          <div class="hero-tag"><i class="fa-solid fa-square-root-variable"></i> Rapid Revision Engine</div>
+          <h1 class="hero-title">GATE DA High-Yield Formula Cards</h1>
+          <p class="hero-subtitle">Formula cheat-sheets covering Linear Algebra, Probability, Calculus, and ML algorithms for rapid daily formula drilling.</p>
         </div>
       `;
 
       formulasData.forEach(cat => {
         html += `
           <div style="margin-bottom: 32px;">
-            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 16px; color: var(--accent-amber); display: flex; align-items: center; gap: 8px;">
-              <i class="fa-solid fa-atom"></i> ${cat.category}
+            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-atom" style="color:var(--accent-amber);"></i> ${cat.category}
             </h2>
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
-              ${cat.items.map(item => `
-                <div class="formula-card">
-                  <div class="formula-name">${item.name}</div>
-                  <div class="formula-math" style="font-size:1.05rem; overflow-x:auto;">$$${item.formula}$$</div>
-                  <div class="formula-notes">${item.notes}</div>
+              ${(cat.items || []).map(item => `
+                <div class="stat-card" style="flex-direction: column; align-items: flex-start;">
+                  <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--accent-amber); margin-bottom: 8px;">${item.name}</h4>
+                  <div style="font-size: 0.95rem; font-family: var(--font-mono); background: var(--bg-hover); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); width: 100%; margin-bottom: 10px; overflow-x: auto;">
+                    ${item.formula}
+                  </div>
+                  <p style="font-size: 0.82rem; color: var(--text-muted);">${item.note}</p>
                 </div>
               `).join('')}
             </div>
@@ -1216,40 +1142,22 @@
       });
 
       container.innerHTML = html;
-      GateApp.renderMath(container);
-    },
 
-    renderMath: function (containerEl) {
-      const target = containerEl || document.body;
-      if (typeof renderMathInElement === 'function') {
-        renderMathInElement(target, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false },
-            { left: '\\(', right: '\\)', display: false },
-            { left: '\\[', right: '\\]', display: true }
-          ],
-          throwOnError: false
-        });
-      } else {
-        // Retry if KaTeX script is still loading
-        setTimeout(() => {
-          if (typeof renderMathInElement === 'function') {
-            renderMathInElement(target, {
-              delimiters: [
-                { left: '$$', right: '$$', display: true },
-                { left: '$', right: '$', display: false },
-                { left: '\\(', right: '\\)', display: false },
-                { left: '\\[', right: '\\]', display: true }
-              ],
-              throwOnError: false
-            });
-          }
-        }, 500);
+      // Render KaTeX Math if available
+      if (window.renderMathInElement) {
+        try {
+          renderMathInElement(container, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '$', right: '$', display: false }
+            ],
+            throwOnError: false
+          });
+        } catch (e) {}
       }
     },
 
-    /* ---------------- NOTES & BOOKMARKS VIEW ---------------- */
+    /* ---------------- NOTES & JOURNAL VIEW ---------------- */
     renderNotesView: function () {
       const container = document.getElementById('notesViewContent');
       if (!container) return;
@@ -1261,6 +1169,7 @@
           const vidId = key.replace('gx-note:', '');
           const noteText = localStorage.getItem(key);
           if (noteText && noteText.trim()) {
+            // Find corresponding video
             let foundVid = null;
             let foundSubj = null;
             (window.GATE_DA_SUBJECTS || []).forEach(s => {
@@ -1276,73 +1185,62 @@
             notesList.push({
               vidId,
               noteText,
-              videoTitle: foundVid ? foundVid.title : 'Lecture Note',
-              subjectTitle: foundSubj ? foundSubj.title : 'GATE DA'
+              videoTitle: foundVid ? foundVid.title : `Lecture ${vidId}`,
+              subjectTitle: foundSubj ? foundSubj.title : 'General Study'
             });
           }
         }
       }
 
-      let notesHtml = '';
-      if (!notesList.length) {
-        notesHtml = `
-          <div style="padding: 48px; text-align: center; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
-            <i class="fa-regular fa-note-sticky" style="font-size: 2.5rem; color: var(--text-faint); margin-bottom: 12px; display: block;"></i>
-            <h3 style="font-size: 1.1rem; margin-bottom: 6px;">No study notes created yet</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 460px; margin: 0 auto 16px;">
-              Open any lecture in the Live Player or Theater Study Room to type notes that automatically save here for quick revision.
-            </p>
-          </div>
-        `;
-      } else {
-        notesHtml = `
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
-            ${notesList.map(n => `
-              <div class="stat-card" style="flex-direction: column; align-items: flex-start;">
-                <div style="font-size: 0.75rem; color: var(--accent-amber); font-weight: 700; margin-bottom: 4px;">${n.subjectTitle}</div>
-                <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 10px;">${n.videoTitle}</h4>
-                <div style="background: var(--bg-primary); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); width: 100%; font-size: 0.85rem; line-height: 1.5; white-space: pre-wrap; margin-bottom: 12px; color: var(--text-main);">
-                  ${n.noteText}
-                </div>
-                <div style="display: flex; gap: 8px; width: 100%; justify-content: flex-end;">
-                  <button class="btn-secondary btn-sm" onclick="GateApp.deleteNote('${n.vidId}')">
-                    <i class="fa-solid fa-trash"></i> Delete
-                  </button>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
-
       container.innerHTML = `
         <div class="hero-banner">
-          <div class="hero-tag"><i class="fa-solid fa-pencil"></i> Personal Study Journal</div>
-          <h1 class="hero-title">My Lecture Notes & Bookmarks</h1>
-          <p class="hero-subtitle">Review all your personal timestamped notes taken during video lectures across all 9 subjects.</p>
-          <div style="display:flex; gap:12px;">
-            <button class="btn-primary btn-sm" onclick="GateApp.exportNotes()">
-              <i class="fa-solid fa-file-export"></i> Export Notes (Markdown)
+          <div class="hero-tag"><i class="fa-solid fa-journal-whills"></i> Active Recall Log</div>
+          <h1 class="hero-title">My Personal Study Journal & Notes</h1>
+          <p class="hero-subtitle">Centralized archive of all timestamped notes, derivations, and questions taken during video lecture study sessions.</p>
+
+          <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="GateApp.exportNotesAsMarkdown()">
+              <i class="fa-solid fa-file-arrow-down"></i> Export All Notes (.md)
             </button>
-            <button class="btn-secondary btn-sm" onclick="GateApp.exportProgress()">
-              <i class="fa-solid fa-download"></i> Backup Study Progress
+            <button class="btn-secondary" onclick="GateApp.exportProgress()">
+              <i class="fa-solid fa-cloud-arrow-down"></i> Backup Progress (.json)
             </button>
           </div>
         </div>
 
-        ${notesHtml}
+        <div>
+          ${notesList.length === 0 ? `
+            <div class="stat-card" style="text-align: center; justify-content: center; padding: 48px;">
+              <div>
+                <i class="fa-solid fa-pencil" style="font-size: 2.5rem; color: var(--text-faint); margin-bottom: 12px;"></i>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">No Lecture Notes Recorded Yet</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+                  Open any video lecture in the Course Player or Theater Mode and type notes in the sidebar—they will appear here automatically!
+                </p>
+              </div>
+            </div>
+          ` : notesList.map(n => `
+            <div class="chapter-card open" style="margin-bottom: 16px;">
+              <div class="chapter-header" style="cursor: default;">
+                <div>
+                  <div style="font-size: 0.75rem; color: var(--accent-amber); font-weight: 700;">${n.subjectTitle}</div>
+                  <h4 style="font-size: 1.05rem; font-weight: 700; margin-top: 2px;">${n.videoTitle}</h4>
+                </div>
+                <button class="btn-secondary btn-sm" onclick="GatePlayer.openTheater('${activeSubjectId}', 0, 0)">
+                  <i class="fa-solid fa-play"></i> Rewatch
+                </button>
+              </div>
+              <div class="chapter-body" style="display: block; padding: 16px 20px;">
+                <p style="white-space: pre-wrap; font-size: 0.88rem; line-height: 1.6; color: var(--text-main); margin-bottom: 0;">${n.noteText}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
       `;
     },
 
-    deleteNote: function (vidId) {
-      if (confirm('Are you sure you want to delete this note?')) {
-        localStorage.removeItem(`gx-note:${vidId}`);
-        GateApp.renderNotesView();
-      }
-    },
-
-    exportNotes: function () {
-      let md = '# GATE DA 2027 - My Personal Study Notes\n\n';
+    exportNotesAsMarkdown: function () {
+      let md = '# GATE DA 2027 Study Journal Notes\n\nGenerated from GATE DA Mission Control\n\n---\n\n';
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('gx-note:')) {
@@ -1397,10 +1295,7 @@
             type: 'Chapter',
             title: `${ch.title} (${s.title})`,
             subtitle: `${ch.video_count} videos`,
-            action: () => {
-              GateApp.showSubject(s.id);
-              setTimeout(() => GateApp.scrollToChapter(cI), 300);
-            }
+            action: () => GateApp.showSubject(s.id, cI)
           });
 
           ch.videos.forEach((v, vI) => {
@@ -1408,10 +1303,7 @@
               type: 'Lecture',
               title: v.title,
               subtitle: `${s.title} • ${ch.title}`,
-              action: () => {
-                GateApp.showSubject(s.id);
-                setTimeout(() => GateApp.playInSubjectMasterPlayer(s.id, cI, vI), 300);
-              }
+              action: () => GateApp.showSubject(s.id, cI, v.id)
             });
           });
         });
