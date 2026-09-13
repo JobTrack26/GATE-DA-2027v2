@@ -15,12 +15,22 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
+import mimetypes
+mimetypes.init()
+mimetypes.add_type('application/pdf', '.pdf')
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
+
 PORT = 8000
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        if self.path.endswith('.pdf'):
+            self.send_header('Content-Type', 'application/pdf')
+            self.send_header('Cache-Control', 'public, max-age=31536000')
+        else:
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
         super().end_headers()
 
 def main():

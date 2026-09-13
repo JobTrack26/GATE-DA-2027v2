@@ -9,6 +9,7 @@
   let activeView = 'dashboard';
   let activeSubjectId = 'matrices';
   let activeChapterFilter = null; // null = all, or chapter index number
+  let selectedPlanDay = 1; // Default active day mission in 145-day plan
 
   // Course Player view state
   let playerSubjectId = 'matrices';
@@ -287,7 +288,7 @@
       if (viewName === 'notes') GateApp.renderNotesView();
     },
 
-    /* ---------------- 145-DAY STUDY PLAN VIEW ---------------- */
+    /* ---------------- 145-DAY STUDY PLAN VIEW (WITH DAY-SPECIFIC VIDEO LESSONS) ---------------- */
     renderPlanView: function (filterPhaseId) {
       const container = document.getElementById('planViewContent');
       if (!container) return;
@@ -297,6 +298,8 @@
 
       let totalDays = 0;
       let completedDays = 0;
+      let allDailyGoals = [];
+
       phases.forEach(ph => {
         ph.weeks.forEach(w => {
           w.dailyGoals.forEach(dg => {
@@ -304,11 +307,52 @@
             if (localStorage.getItem('gx-plan:day-' + dg.day) === '1') {
               completedDays++;
             }
+            allDailyGoals.push(dg);
           });
         });
       });
 
       const pct = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+
+      // Find selected day object (defaults to selectedPlanDay or Day 1)
+      const currentSelectedGoal = allDailyGoals.find(g => g.day === selectedPlanDay) || allDailyGoals[0] || {};
+      const isCurrentSelectedDone = localStorage.getItem('gx-plan:day-' + currentSelectedGoal.day) === '1';
+      const currentSubjectMeta = (window.GATE_DA_SUBJECTS || []).find(s => s.id === currentSelectedGoal.subjectId) || {};
+      const currentRemotePdf = currentSubjectMeta.remote_pdf || '';
+
+      // Build Top Hero Mission Card for the currently focused day
+      const dayVids = currentSelectedGoal.videos || [];
+      const topMissionVideosHtml = dayVids.length > 0 ? dayVids.map((v, vIdx) => {
+        const isVidDone = GateApp.isWatched(v.id);
+        return `
+          <div class="video-card ${isVidDone ? 'watched' : ''}" id="top-vcard-${v.id}" style="background:var(--bg-card);">
+            <div class="video-thumb" id="top-thumb-wrap-${v.id}" data-video="${v.id}" onclick="GateApp.playInlineVideo('${v.id}', this)">
+              <img src="${v.thumbnail}" alt="${v.title}" loading="lazy" />
+              <div class="play-overlay-btn" title="Click to play lecture">
+                <i class="fa-solid fa-circle-play" style="font-size:2.2rem; color:#fff; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));"></i>
+              </div>
+            </div>
+            <div style="padding:10px 12px; display:flex; flex-direction:column; justify-content:space-between; flex-grow:1;">
+              <div style="font-size:0.86rem; font-weight:700; line-height:1.35; margin-bottom:8px;">${v.title}</div>
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label style="display:flex; align-items:center; gap:6px; font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
+                  <input type="checkbox" ${isVidDone ? 'checked' : ''} onchange="GateApp.handleVideoCheck('${v.id}', this.checked, '${currentSelectedGoal.subjectId}', ${v.chapterIdx || 0})" style="accent-color:var(--emerald); width:15px; height:15px; cursor:pointer;" />
+                  <span>Watched</span>
+                </label>
+                <button class="theater-mode-btn" onclick="GatePlayer.openTheater('${currentSelectedGoal.subjectId}', ${v.chapterIdx || 0}, ${v.videoIdx || 0})">
+                  <i class="fa-solid fa-expand"></i> Theater
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('') : `
+        <div style="background:var(--bg-card); border:1px dashed var(--border-color); border-radius:var(--radius-md); padding:20px; text-align:center; width:100%;">
+          <i class="fa-solid fa-brain" style="color:var(--accent-amber); font-size:1.8rem; margin-bottom:8px;"></i>
+          <div style="font-size:0.92rem; font-weight:700;">Problem Solving & Revision Day</div>
+          <div style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">Practice questions in the Practice Arena with the Virtual Calculator and review the Formula Cheatsheet.</div>
+        </div>
+      `;
 
       // Phase filter pills
       const phaseTabsHtml = `
@@ -338,20 +382,79 @@
         const weeksHtml = ph.weeks.map(w => {
           const daysHtml = w.dailyGoals.map(dg => {
             const isDone = localStorage.getItem('gx-plan:day-' + dg.day) === '1';
-            const chIdx = dg.chapterIdx !== undefined ? dg.chapterIdx : 0;
-            const vidId = dg.videoId || '';
+            const isSelected = dg.day === selectedPlanDay;
+            const vids = dg.videos || [];
+            
+            // Build drawer with this specific day's video cards
+            const drawerCardsHtml = vids.length > 0 ? vids.map((v, vIdx) => {
+              const isVidDone = GateApp.isWatched(v.id);
+              return `
+                <div class="video-card ${isVidDone ? 'watched' : ''}" id="vcard-${v.id}" style="background:var(--bg-primary);">
+                  <div class="video-thumb" id="thumb-wrap-${v.id}" data-video="${v.id}" onclick="GateApp.playInlineVideo('${v.id}', this)">
+                    <img src="${v.thumbnail}" alt="${v.title}" loading="lazy" />
+                    <div class="play-overlay-btn" title="Watch lecture">
+                      <i class="fa-solid fa-circle-play" style="font-size:2rem; color:#fff; filter:drop-shadow(0 2px 5px rgba(0,0,0,0.6));"></i>
+                    </div>
+                  </div>
+                  <div style="padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between; flex-grow:1;">
+                    <div style="font-size:0.82rem; font-weight:600; line-height:1.3; margin-bottom:6px;">${v.title}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <label style="display:flex; align-items:center; gap:5px; font-size:0.72rem; color:var(--text-muted); cursor:pointer;">
+                        <input type="checkbox" ${isVidDone ? 'checked' : ''} onchange="GateApp.handleVideoCheck('${v.id}', this.checked, '${dg.subjectId}', ${v.chapterIdx || 0})" style="accent-color:var(--emerald); width:14px; height:14px; cursor:pointer;" />
+                        <span>Watched</span>
+                      </label>
+                      <button class="theater-mode-btn" style="font-size:0.72rem; padding:2px 8px;" onclick="GatePlayer.openTheater('${dg.subjectId}', ${v.chapterIdx || 0}, ${v.videoIdx || 0})">
+                        <i class="fa-solid fa-expand"></i> Theater
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('') : `
+              <div style="font-size:0.82rem; color:var(--text-muted); padding:10px; background:var(--bg-primary); border-radius:var(--radius-sm);">
+                <i class="fa-solid fa-pencil" style="color:var(--accent-amber);"></i> Practice and problem solving day. Review formulas and solve 15-20 problems.
+              </div>
+            `;
+
             return `
-              <div style="display:flex; align-items:flex-start; gap:12px; padding:10px 14px; background:var(--bg-card); border:1px solid ${isDone ? 'var(--emerald)' : 'var(--border-color)'}; border-radius:var(--radius-sm); margin-bottom:8px; transition:var(--transition);">
-                <input type="checkbox" ${isDone ? 'checked' : ''} onchange="GateApp.togglePlanDay(${dg.day}, this.checked)" style="accent-color:var(--emerald); width:18px; height:18px; margin-top:3px; cursor:pointer; flex-shrink:0;" />
-                <div style="flex-grow:1; min-width:0;">
-                  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-                    <span style="font-size:0.82rem; font-weight:700; color:var(--accent-amber);">Day ${dg.day} • ${dg.date}</span>
-                    <button class="btn-secondary btn-sm" style="padding:3px 10px; font-size:0.75rem;" onclick="GateApp.showSubject('${dg.subjectId}', ${chIdx}, '${vidId}')">
-                      <i class="fa-solid fa-circle-play" style="color:var(--accent-amber);"></i> Watch Lecture
+              <div style="background:var(--bg-card); border:1px solid ${isSelected ? 'var(--accent-amber)' : (isDone ? 'var(--emerald)' : 'var(--border-color)')}; border-radius:var(--radius-sm); margin-bottom:10px; padding:12px 16px; transition:var(--transition);" id="plan-day-row-${dg.day}">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;">
+                  <div style="display:flex; align-items:flex-start; gap:12px; flex-grow:1; min-width:280px;">
+                    <input type="checkbox" ${isDone ? 'checked' : ''} onchange="GateApp.togglePlanDay(${dg.day}, this.checked)" style="accent-color:var(--emerald); width:18px; height:18px; margin-top:3px; cursor:pointer; flex-shrink:0;" />
+                    <div style="flex-grow:1;">
+                      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span style="font-size:0.84rem; font-weight:800; color:${isSelected ? 'var(--accent-amber)' : 'var(--text-main)'};">Day ${dg.day} • ${dg.date}</span>
+                        <span class="brand-badge" style="font-size:0.68rem; padding:1px 6px;">${dg.subjectTitle || dg.subjectId}</span>
+                        ${vids.length ? `<span style="font-size:0.72rem; color:var(--accent-amber); font-weight:700;"><i class="fa-solid fa-video"></i> ${vids.length} Lectures</span>` : ''}
+                      </div>
+                      <div style="font-size:0.86rem; margin-top:4px; ${isDone ? 'text-decoration:line-through; color:var(--text-faint);' : 'color:var(--text-muted);'} line-height:1.4;">
+                        ${dg.target}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; gap:6px; flex-shrink:0;">
+                    <button class="btn-primary btn-sm" style="padding:3px 10px; font-size:0.75rem;" onclick="GateApp.focusPlanDay(${dg.day})">
+                      <i class="fa-solid fa-bullseye"></i> Focus Day ${dg.day}
+                    </button>
+                    ${vids.length > 0 ? `
+                      <button class="btn-secondary btn-sm" style="padding:3px 10px; font-size:0.75rem;" onclick="GateApp.togglePlanDayDrawer(${dg.day})">
+                        <i class="fa-solid fa-chevron-down" id="drawer-arrow-${dg.day}"></i> ${vids.length} Videos
+                      </button>
+                    ` : ''}
+                    <button class="btn-secondary btn-sm" style="padding:3px 8px; font-size:0.75rem;" onclick="GateApp.showSubject('${dg.subjectId}', ${dg.chapterIdx !== undefined ? dg.chapterIdx : 0})">
+                      <i class="fa-solid fa-arrow-up-right-from-square"></i> Subject
                     </button>
                   </div>
-                  <div style="font-size:0.86rem; margin-top:3px; ${isDone ? 'text-decoration:line-through; color:var(--text-faint);' : 'color:var(--text-main);'}">
-                    ${dg.target}
+                </div>
+
+                <!-- Expandable Drawer for this Day's Exact Videos -->
+                <div id="plan-day-drawer-${dg.day}" style="display:${isSelected ? 'block' : 'none'}; margin-top:14px; padding-top:14px; border-top:1px solid var(--border-color);">
+                  <div style="font-size:0.78rem; font-weight:700; color:var(--accent-amber); text-transform:uppercase; margin-bottom:10px;">
+                    <i class="fa-solid fa-video"></i> Assigned Lectures for Day ${dg.day}:
+                  </div>
+                  <div class="videos-grid">
+                    ${drawerCardsHtml}
                   </div>
                 </div>
               </div>
@@ -359,11 +462,11 @@
           }).join('');
 
           return `
-            <div class="chapter-card open" style="margin-bottom:18px;">
+            <div class="chapter-card open" style="margin-bottom:20px;">
               <div class="chapter-header" style="cursor:default; background:var(--bg-secondary);">
                 <div>
                   <div style="font-size:0.75rem; color:var(--accent-amber); font-weight:700;">WEEK ${w.weekNum} • ${w.dates}</div>
-                  <div style="font-size:1.05rem; font-weight:800; margin-top:2px;">${w.subject}</div>
+                  <div style="font-size:1.1rem; font-weight:800; margin-top:2px;">${w.subject}</div>
                   <div style="font-size:0.8rem; color:var(--text-muted);">${w.focus}</div>
                 </div>
                 <span class="brand-badge">${w.dailyGoals.length} Days</span>
@@ -377,7 +480,7 @@
 
         return `
           <div style="margin-bottom:32px;">
-            <h3 style="font-size:1.2rem; font-weight:800; margin-bottom:14px; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+            <h3 style="font-size:1.25rem; font-weight:800; margin-bottom:14px; color:var(--text-main); display:flex; align-items:center; gap:8px;">
               <i class="fa-solid fa-flag" style="color:var(--accent-amber);"></i> ${ph.name}
             </h3>
             <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">${ph.goal}</p>
@@ -390,7 +493,7 @@
         <div class="hero-banner">
           <div class="hero-tag"><i class="fa-solid fa-bullseye"></i> 145-Day High-Velocity Blueprint</div>
           <h1 class="hero-title">My GATE DA 2027 Battle Plan</h1>
-          <p class="hero-subtitle">Starting Tomorrow (Sept 14, 2026) -> Exam Day (Feb 6, 2027). A rigorous 145-day day-by-day roadmap engineered to take you from scratch to AIR 1-50.</p>
+          <p class="hero-subtitle">Rigorous 145-day day-by-day roadmap engineered to take you from scratch to AIR 1-50. Each day highlights its exact video lectures and textbook reading.</p>
 
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin:18px 0;">
             ${slotsHtml}
@@ -407,12 +510,71 @@
           </div>
         </div>
 
+        <!-- ==================== ACTIVE DAY FOCUS STAGE ==================== -->
+        <div class="hero-banner" style="background:linear-gradient(135deg, rgba(245,158,11,0.12) 0%, var(--bg-card) 100%); border:1px solid var(--accent-amber); padding:22px; margin-bottom:28px;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+            <div>
+              <div class="hero-tag" style="background:var(--accent-amber); color:#000; font-weight:800; margin-bottom:6px;">
+                <i class="fa-solid fa-crosshairs"></i> ACTIVE MISSION FOCUS • DAY ${currentSelectedGoal.day} (${currentSelectedGoal.date})
+              </div>
+              <h2 style="font-size:1.35rem; font-weight:800; margin-top:4px;">
+                ${currentSelectedGoal.subjectTitle || 'Core Subject'}: Day ${currentSelectedGoal.day}
+              </h2>
+              <p style="font-size:0.9rem; color:var(--text-main); margin-top:4px; max-width:800px; line-height:1.45;">
+                ${currentSelectedGoal.target}
+              </p>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-primary btn-sm" onclick="GateApp.togglePlanDay(${currentSelectedGoal.day}, ${!isCurrentSelectedDone})">
+                <i class="${isCurrentSelectedDone ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}"></i> ${isCurrentSelectedDone ? 'Marked Completed' : 'Mark Day Done'}
+              </button>
+              ${currentSelectedGoal.pdfPath ? `
+                <button class="btn-secondary btn-sm" onclick="GateApp.openPdfViewer('${currentSelectedGoal.pdfPath}', '${currentSelectedGoal.subjectTitle || 'Subject'} Handbook', '${currentRemotePdf}')">
+                  <i class="fa-solid fa-book-open"></i> Read Handbook
+                </button>
+                <a class="btn-secondary btn-sm" href="${currentSelectedGoal.pdfPath}" download="${(currentSelectedGoal.pdfPath || '').split('/').pop()}" target="_blank" title="Download Official Handbook">
+                  <i class="fa-solid fa-download"></i> PDF
+                </a>
+              ` : ''}
+              <button class="btn-secondary btn-sm" onclick="GateApp.showSubject('${currentSelectedGoal.subjectId}', ${currentSelectedGoal.chapterIdx !== undefined ? currentSelectedGoal.chapterIdx : 0})">
+                <i class="fa-solid fa-layer-group"></i> Full Subject
+              </button>
+            </div>
+          </div>
+
+          <!-- Video cards specifically for this day -->
+          <div>
+            <div style="font-size:0.82rem; font-weight:700; color:var(--accent-amber); text-transform:uppercase; margin-bottom:12px; letter-spacing:0.04em;">
+              <i class="fa-solid fa-video"></i> Assigned Lectures for Day ${currentSelectedGoal.day} (${dayVids.length} Videos):
+            </div>
+            <div class="videos-grid">
+              ${topMissionVideosHtml}
+            </div>
+          </div>
+        </div>
+
         ${phaseTabsHtml}
 
         <div>
           ${phasesHtml}
         </div>
       `;
+    },
+
+    focusPlanDay: function (dayNum) {
+      selectedPlanDay = dayNum;
+      GateApp.renderPlanView();
+      window.scrollTo({ top: 400, behavior: 'smooth' });
+    },
+
+    togglePlanDayDrawer: function (dayNum) {
+      const drawer = document.getElementById(`plan-day-drawer-${dayNum}`);
+      const arrow = document.getElementById(`drawer-arrow-${dayNum}`);
+      if (!drawer) return;
+      const isOpen = drawer.style.display !== 'none';
+      drawer.style.display = isOpen ? 'none' : 'block';
+      if (arrow) arrow.className = isOpen ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
     },
 
     togglePlanDay: function (dayNum, isChecked) {
@@ -432,6 +594,7 @@
       const subjects = window.GATE_DA_SUBJECTS || [];
       grid.innerHTML = subjects.map(s => {
         const p = GateApp.getSubjectProgress(s.id);
+        const pdfFileName = (s.local_pdf || '').split('/').pop();
         return `
           <div class="subject-card" onclick="GateApp.showSubject('${s.id}')">
             <div class="subject-card-top">
@@ -463,9 +626,12 @@
               <button class="btn-primary btn-sm" style="flex-grow:1; justify-content:center;" onclick="event.stopPropagation(); GateApp.showSubject('${s.id}')">
                 <i class="fa-solid fa-play"></i> Explore Subject
               </button>
-              <button class="btn-secondary btn-sm" onclick="event.stopPropagation(); GateApp.openPdfViewer('${s.local_pdf || s.remote_pdf}', '${s.title} - Official Handbook')">
+              <button class="btn-secondary btn-sm" onclick="event.stopPropagation(); GateApp.openPdfViewer('${s.local_pdf || s.remote_pdf}', '${s.title} - Official Handbook', '${s.remote_pdf}')">
                 <i class="fa-solid fa-book-open"></i> Handbook
               </button>
+              <a class="btn-secondary btn-sm" href="${s.local_pdf || s.remote_pdf}" download="${pdfFileName}" target="_blank" onclick="event.stopPropagation();" title="Download PDF to device">
+                <i class="fa-solid fa-download"></i>
+              </a>
             </div>
           </div>
         `;
@@ -509,6 +675,7 @@
 
       const prog = GateApp.getSubjectProgress(subject.id);
       const pdfPath = subject.local_pdf || subject.remote_pdf;
+      const pdfFileName = (pdfPath || '').split('/').pop();
 
       // Build quick jump pills
       const pillsHtml = `
@@ -522,11 +689,23 @@
         `).join('')}
       `;
 
+      // Filter notice if looking at a specific chapter
+      const filterNoticeHtml = activeChapterFilter !== null && subject.chapters[activeChapterFilter] ? `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-card); border:1px solid var(--accent-amber); border-radius:var(--radius-md); padding:12px 18px; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div style="font-size:0.75rem; color:var(--accent-amber); font-weight:700; text-transform:uppercase;"><i class="fa-solid fa-filter"></i> Focused Chapter View</div>
+            <div style="font-size:1.05rem; font-weight:800; margin-top:2px;">${subject.chapters[activeChapterFilter].title} (${subject.chapters[activeChapterFilter].video_count} lectures)</div>
+          </div>
+          <button class="btn-secondary btn-sm" onclick="GateApp.filterSubjectChapter(null)">
+            <i class="fa-solid fa-layer-group"></i> View All Chapters
+          </button>
+        </div>
+      ` : '';
+
       // Build chapter accordions
       const chaptersHtml = subject.chapters.map((ch, cIdx) => {
-        // If chapter filter active, hide non-matching chapters
-        const isFilteredOut = activeChapterFilter !== null && activeChapterFilter !== cIdx;
-        if (isFilteredOut) return '';
+        // If chapter filter active, show ONLY that chapter
+        if (activeChapterFilter !== null && activeChapterFilter !== cIdx) return '';
 
         let chapterDoneCount = 0;
         ch.videos.forEach(v => {
@@ -534,15 +713,15 @@
         });
         const chPct = ch.videos.length ? Math.round((chapterDoneCount / ch.videos.length) * 100) : 0;
 
-        // Default open: targeted chapter, or first chapter if no target
-        const isOpen = targetChapterIdx !== undefined ? (targetChapterIdx === cIdx) : (activeChapterFilter === cIdx || (activeChapterFilter === null && cIdx === 0));
+        // Default open if filtered to this chapter, or if it's the first chapter
+        const isOpen = activeChapterFilter !== null ? (activeChapterFilter === cIdx) : (cIdx === 0);
 
         const videosHtml = ch.videos.map((vid, vIdx) => {
           const isDone = GateApp.isWatched(vid.id);
           return `
             <div class="video-card ${isDone ? 'watched' : ''}" id="vcard-${vid.id}">
               <!-- Thumbnail with Play overlay (Clicking embeds player inline right on card) -->
-              <div class="video-thumb" id="thumb-wrap-${vid.id}" data-video="${vid.id}" onclick="GateApp.playInlineVideo('${vid.id}')">
+              <div class="video-thumb" id="thumb-wrap-${vid.id}" data-video="${vid.id}" onclick="GateApp.playInlineVideo('${vid.id}', this)">
                 <img src="${vid.thumbnail}" alt="${vid.title}" loading="lazy" />
                 <div class="play-overlay-btn" title="Click to watch video lecture">
                   <i class="fa-solid fa-circle-play" style="font-size:2.2rem; color:#fff; filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));"></i>
@@ -604,11 +783,14 @@
           <p class="hero-subtitle">${subject.description || 'Curated video lectures and complete official textbooks for GATE DA 2027.'}</p>
 
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px;">
-            <button class="btn-primary" onclick="GateApp.openPdfViewer('${pdfPath}', '${subject.title} - Official GATE DA Handbook')">
+            <button class="btn-primary" onclick="GateApp.openPdfViewer('${pdfPath}', '${subject.title} - Official GATE DA Handbook', '${subject.remote_pdf}')">
               <i class="fa-solid fa-book-open"></i> Read Subject Handbook PDF
             </button>
-            <a class="btn-secondary" href="${pdfPath}" download target="_blank">
+            <a class="btn-secondary" href="${pdfPath}" download="${pdfFileName}" target="_blank">
               <i class="fa-solid fa-download"></i> Download PDF
+            </a>
+            <a class="btn-secondary" href="${subject.remote_pdf}" download="${pdfFileName}" target="_blank" title="Official CDN Mirror">
+              <i class="fa-solid fa-cloud-arrow-down"></i> Mirror Download
             </a>
             <button class="btn-secondary" onclick="GateApp.showView('player')">
               <i class="fa-solid fa-circle-play"></i> Open in Course Player
@@ -625,6 +807,8 @@
             </div>
           </div>
         </div>
+
+        ${filterNoticeHtml}
 
         <div class="chapter-pills-row">
           ${pillsHtml}
@@ -643,7 +827,7 @@
             targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
             targetCard.style.borderColor = 'var(--accent-amber)';
             const thumb = document.getElementById(`thumb-wrap-${targetVidId}`);
-            if (thumb) GateApp.playInlineVideo(targetVidId);
+            if (thumb) GateApp.playInlineVideo(targetVidId, thumb);
           }
         }, 200);
       } else if (targetChapterIdx !== undefined) {
@@ -657,8 +841,8 @@
     },
 
     /* ---------------- INLINE EMBED PLAYER (GATEXAIML FACADE) ---------------- */
-    playInlineVideo: function (vidId) {
-      const container = document.getElementById(`thumb-wrap-${vidId}`);
+    playInlineVideo: function (vidId, containerEl) {
+      const container = containerEl || document.getElementById(`thumb-wrap-${vidId}`);
       if (!container || !vidId) return;
 
       const iframe = document.createElement('iframe');
@@ -933,15 +1117,26 @@
     },
 
     /* ---------------- PDF VIEWER MODAL ---------------- */
-    openPdfViewer: function (fileUrl, title) {
+    openPdfViewer: function (fileUrl, title, remoteUrl) {
       const modal = document.getElementById('pdfModal');
       const titleEl = document.getElementById('pdfModalTitle');
       const iframe = document.getElementById('pdfIframe');
       const directLink = document.getElementById('pdfDirectDownloadLink');
+      const mirrorLink = document.getElementById('pdfMirrorDownloadLink');
+
+      const fileName = (fileUrl || '').split('/').pop();
 
       if (titleEl) titleEl.textContent = title || 'PDF Handbook Viewer';
       if (iframe) iframe.src = fileUrl;
-      if (directLink) directLink.href = fileUrl;
+      if (directLink) {
+        directLink.href = fileUrl;
+        directLink.setAttribute('download', fileName);
+      }
+      if (mirrorLink) {
+        mirrorLink.href = remoteUrl || fileUrl;
+        mirrorLink.setAttribute('download', fileName);
+        mirrorLink.style.display = remoteUrl ? 'inline-flex' : 'none';
+      }
       if (modal) modal.classList.add('open');
       document.body.style.overflow = 'hidden';
     },
@@ -1016,7 +1211,7 @@
 
               ${t.subjectId ? `
                 <button class="btn-secondary btn-sm" style="white-space:nowrap; font-size:0.75rem; padding:3px 10px;" onclick="GateApp.showSubject('${t.subjectId}', ${t.chapterIdx})">
-                  <i class="fa-solid fa-circle-play" style="color:var(--accent-amber);"></i> Watch Lectures
+                  <i class="fa-solid fa-circle-play" style="color:var(--accent-amber);"></i> Watch ${t.chapterName ? t.chapterName.split(':')[0] : 'Lectures'}
                 </button>
               ` : ''}
             </div>
