@@ -1,0 +1,279 @@
+/** Recommended Textbooks */
+window.GATE_DA_BOOKS = {
+  "probability": {
+    "subject": "Probability & Statistics",
+    "books": [
+      {
+        "title": "Probability and Statistics for Engineers and Scientists",
+        "author": "Walpole, Myers, Myers & Ye· 9th Edition",
+        "badge": "Standard reference",
+        "description": "The most GATE-DA-aligned book on this list. Strong on estimation, hypothesis testing, and regression, with worked case studies that mirror how GATE frames applied statistics questions. The SAS/MINITAB software notes are optional reading - skip them if you only care about the exam.",
+        "link": "https://www.amazon.in/dp/8119896645?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Probability and Statistics for Engineering and the Sciences",
+        "author": "Jay L. Devore· 9th Edition (India reprint)",
+        "badge": "In-depth",
+        "description": "The clearest explanations of core probability rules, random variables, and distributions you will find in any standard textbook - this is usually the first book to reach for when a concept isn't clicking. Its end-of-chapter problems are close in spirit and difficulty to GATE-level questions.",
+        "link": "https://www.amazon.in/dp/8131518396?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Schaum's Outline of Probability and Statistics",
+        "author": "Spiegel, Schiller & Srinivasan· 4th Edition · 897 solved problems",
+        "badge": "Practice & problems",
+        "description": "Best used as a rapid revision and problem-drilling companion in the final weeks before the exam - hundreds of solved problems with minimal theory, ideal once you already understand the concepts from the books above.",
+        "link": "https://www.amazon.in/dp/007179557X?tag=gatexaiml06-21"
+      }
+    ]
+  },
+  "linear-algebra": {
+    "subject": "Linear Algebra",
+    "books": [
+      {
+        "title": "Linear Algebra and Its Applications",
+        "author": "Gilbert Strang· 4th Edition",
+        "badge": "Standard reference",
+        "description": "Strang's explanations are famous for being intuitive without losing rigor - this is usually the first book recommended for building real understanding.",
+        "link": "https://www.amazon.in/dp/8131501728?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Linear Algebra Done Right",
+        "author": "Sheldon Axler· 4th Edition",
+        "badge": "In-depth",
+        "description": "A more rigorous, proof-first treatment for students who want to go beyond computation into why the theorems are true - great once the basics are solid.",
+        "link": "https://www.amazon.in/dp/9399874893?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Schaum's Outline of Linear Algebra",
+        "author": "Seymour Lipschutz & Marc Lipson· 6th Edition",
+        "badge": "Practice & problems",
+        "description": "A large bank of solved problems, ideal for the final weeks of revision before GATE.",
+        "link": "https://www.amazon.in/dp/9364442989?tag=gatexaiml06-21"
+      }
+    ]
+  },
+  "calculus": {
+    "subject": "Calculus & Optimization",
+    "books": [
+      {
+        "title": "Thomas' Calculus",
+        "author": "George B. Thomas· 15th Edition",
+        "badge": "Standard reference",
+        "description": "The most widely used calculus textbook worldwide - thorough, well-sequenced, and the closest match to how GATE and most university courses structure the syllabus.",
+        "link": "https://www.amazon.in/s?k=Thomas%27+Calculus+George+B.+Thomas&rh=p_36%3A-200000&tag=gatexaiml06-21"
+      },
+      {
+        "title": "Schaum's Outline of Calculus",
+        "author": "Frank Ayres & Elliott Mendelson· 7th Edition",
+        "badge": "Practice & problems",
+        "description": "Hundreds of solved problems for drilling differentiation, integration, and multivariable calculus before the exam.",
+        "link": "https://www.amazon.in/s?k=Schaum%27s+Outline+of+Calculus+Frank+Ayres+%26+Elliott+Mendelson&rh=p_36%3A-200000&tag=gatexaiml06-21"
+      }
+    ]
+  },
+  "python": {
+    "subject": "Programming in Python",
+    "books": [
+      {
+        "title": "Python Crash Course",
+        "author": "Eric Matthes· 3rd Edition",
+        "badge": "In-depth",
+        "description": "A genuinely beginner-friendly, project-based introduction that still builds real programming habits, not just syntax.",
+        "link": "https://www.amazon.in/dp/1593276036?tag=gatexaiml06-21"
+      },
+      {
+        "title": "PYTHON PROGRAMMING",
+        "author": "Reema Thareja· 2nd Edition",
+        "badge": "Beginner",
+        "description": "Unlock the power of Python with this comprehensive and beginner-friendly guide. Designed to build a strong foundation in programming,",
+        "link": "https://www.amazon.in/dp/9354973760?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Effective Python",
+        "author": "Brett Slatkin· 2nd Edition",
+        "badge": "Intermediate",
+        "description": "For once you already know Python and want to actually understand it - idioms, internals, and the \"why\" behind the language's design.",
+        "link": "https://www.amazon.in/dp/9356061629?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Ultimate Python Programming",
+        "author": "Deepali Srivastava",
+        "badge": "Practice & problems",
+        "description": "Learn Python with 650+ programs, 900+ practice questions, and 5 projects. Helpful for GATE and other Competetive exams.",
+        "link": "https://www.amazon.in/dp/935551655X?tag=gatexaiml06-21"
+      }
+    ]
+  },
+  "dsa": {
+    "subject": "Data Structures & Algorithms",
+    "books": [
+      {
+        "title": "Introduction to Algorithms",
+        "author": "Cormen, Leiserson, Rivest & Stein (CLRS)· 4th Edition · PHI Eastern Economy Edition",
+        "badge": "THE BIBLE",
+        "description": "The definitive algorithms textbook - rigorous proofs, comprehensive coverage, and the book most GATE and interview questions ultimately trace back to.",
+        "link": "https://www.amazon.in/dp/026204630X?tag=gatexaiml06-21"
+      },
+      {
+        "title": "DATA STRUCTURES AND ALGORITHMS",
+        "author": "Reema Thareja",
+        "badge": "Beginner",
+        "description": "Offers an exceptionally clear academic approach with step-by-step illustrations, C code walkthroughs, and end-of-chapter exercises standard in Indian university syllabi.",
+        "link": "https://www.amazon.in/dp/9367252676?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Data Structures and Algorithms in Python",
+        "author": "Michael T. Goodrich, Roberto Tamassia & Michael H. Goldwasser",
+        "badge": "Python Implementation - For Jobs",
+        "description": "Comprehensive book on Data structures and Algorithms in python",
+        "link": "https://www.amazon.in/dp/9354247865?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Data Structures and Algorithms Made Easy",
+        "author": "Narasimha Karumanchi",
+        "badge": "Practice & problems",
+        "description": "India-specific, GATE-and-interview-oriented practice book with hundreds of worked problems in a compact format.",
+        "link": "https://www.amazon.in/dp/8193245288?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Algorithms Unlocked",
+        "author": "Thomas Cormen (CLRS)· Amazon",
+        "badge": "Standard reference",
+        "description": "The definitive algorithms textbook - rigorous proofs, comprehensive coverage, and the book most GATE and interview questions ultimately trace back to.",
+        "link": "https://www.amazon.in/dp/0262518805?tag=gatexaiml06-21"
+      }
+    ]
+  },
+  "dbms": {
+    "subject": "Database Management Systems",
+    "books": [
+      {
+        "title": "Database System Concepts",
+        "author": "Abraham Silberschatz, Henry F. Korth & S. Sudarshan· 7th Edition",
+        "badge": "Standard reference",
+        "description": "The most widely used DBMS textbook for GATE - strong coverage of relational algebra, normalization, and transaction management.",
+        "link": "https://www.amazon.in/dp/9390727502?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Fundamentals of Database Systems",
+        "author": "Ramez Elmasri & Shamkant B. Navathe· 7th Edition",
+        "badge": "In-depth",
+        "description": "More exhaustive than Silberschatz on ER modeling and database design - a strong alternative or supplement.",
+        "link": "https://www.amazon.in/dp/933258270X?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Database Management System: A Practical Approach",
+        "author": "Rajesh Narang",
+        "badge": "Practice & problems",
+        "description": "India-focused, GATE-style problems with an emphasis on SQL and normalization exercises.",
+        "link": "https://www.amazon.in/dp/B0GX2WDRS7?tag=gatexaiml06-21"
+      }
+    ]
+  },
+  "ml": {
+    "subject": "Machine Learning",
+    "books": [
+      {
+        "title": "Machine Learning for Absolute Beginners",
+        "author": "Oliver Theobald· 3rd Edition",
+        "badge": "Beginner",
+        "description": "A genuinely plain-English starting point - explains core ML concepts without assuming prior math or programming background, ideal before jumping into denser textbooks.",
+        "link": "https://www.amazon.in/dp/9362056860?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Machine Learning Essentials You Always Wanted to Know",
+        "author": "Dhairya Parikh",
+        "badge": "Beginner",
+        "description": "A hands-on beginner's guide covering supervised, unsupervised, and deep learning algorithms in one accessible volume - good for building a broad first map of the field.",
+        "link": "https://www.amazon.in/dp/1636513778?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Pattern Recognition and Machine Learning",
+        "author": "Christopher M. Bishop· Paperback (2009 Print)",
+        "badge": "In-depth",
+        "description": "A more mathematically thorough, Bayesian-flavored treatment - valuable once you want to go beyond applied ML into the theory behind why the algorithms work.",
+        "link": "https://www.amazon.in/dp/B0FNKJHCQV?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow",
+        "author": "Aurélien Géron",
+        "badge": "Standard reference",
+        "description": "The most practical, code-first ML book available - builds real intuition by having you implement models, not just read about them.",
+        "link": "https://www.amazon.in/dp/B0BHCFNY9Q?tag=gatexaiml06-21"
+      }
+    ]
+  },
+  "ai": {
+    "subject": "Artificial Intelligence",
+    "books": [
+      {
+        "title": "Artificial Intelligence: A Modern Approach",
+        "author": "Stuart Russell & Peter Norvig· 4th Edition",
+        "badge": "Standard reference",
+        "description": "The definitive AI textbook, used in most university courses worldwide - comprehensive coverage spanning search, logic, machine learning, deep learning, NLP, and robotics.",
+        "link": "https://www.amazon.in/dp/9356063575?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Artificial Intelligence",
+        "author": "Saroj Kaushik· 2nd Edition",
+        "badge": "Practice & problems",
+        "description": "An India-focused, GATE-oriented text with practice problems matching the exam's typical question style - a good companion to Russell & Norvig for exam-specific prep.",
+        "link": "https://www.amazon.in/dp/935573042X?tag=gatexaiml06-21"
+      }
+    ]
+  },
+  "deep-learning": {
+    "subject": "Deep Learning & Neural Networks",
+    "books": [
+      {
+        "title": "Deep Learning Using Python",
+        "author": "S Lovelyn Rose, L Ashok Kumar & D Karthika Renuka",
+        "badge": "Beginner",
+        "description": "An India-focused introduction that builds deep learning concepts alongside Python implementation - a gentler starting point before moving to denser international texts.",
+        "link": "https://www.amazon.in/dp/8126579919?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Programming PyTorch for Deep Learning",
+        "author": "Ian Pointer",
+        "badge": "Practice & problems",
+        "description": "A hands-on, project-based guide to building and deploying deep learning models with PyTorch - practical rather than theoretical, good for building real implementation skill.",
+        "link": "https://www.amazon.in/dp/9352139097?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Deep Learning",
+        "author": "Ian Goodfellow, Yoshua Bengio & Aaron Courville",
+        "badge": "In-depth",
+        "description": "Written by pioneers of the field - the definitive theoretical reference for deep learning, covering the mathematical foundations most applied books skip over.",
+        "link": "https://www.amazon.in/dp/0262035618?tag=gatexaiml06-21"
+      }
+    ]
+  },
+  "data-warehousing": {
+    "subject": "Data Warehousing & Data Mining",
+    "books": [
+      {
+        "title": "The Data Warehouse Toolkit",
+        "author": "Ralph Kimball & Margy Ross· 3rd Edition",
+        "badge": "Standard reference",
+        "description": "The definitive reference on dimensional modeling - star schemas, slowly changing dimensions, and fact table design, from the method's creator.",
+        "link": "https://www.amazon.in/s?k=The+Data+Warehouse+Toolkit+Ralph+Kimball+%26+Margy+Ross&rh=p_36%3A-200000&tag=gatexaiml06-21"
+      },
+      {
+        "title": "Data Mining: Concepts and Techniques",
+        "author": "Jiawei Han, Micheline Kamber & Jian Pei",
+        "badge": "Standard reference",
+        "description": "The most widely used data mining textbook - comprehensive coverage of classification, clustering, association rule mining, and data warehousing concepts, closely aligned with how the subject is taught and examined.",
+        "link": "https://www.amazon.in/dp/B08HN2BZ6S?tag=gatexaiml06-21"
+      },
+      {
+        "title": "Data Warehousing Fundamentals",
+        "author": "Paulraj Ponniah· 2nd Edition",
+        "badge": "Practice & problems",
+        "description": "A more accessible, India-popular introduction with simpler explanations of OLAP operations and schema design.",
+        "link": "https://www.amazon.in/s?k=Data+Warehousing+Fundamentals+Paulraj+Ponniah&rh=p_36%3A-200000&tag=gatexaiml06-21"
+      }
+    ]
+  }
+};
+var GATE_DA_BOOKS = window.GATE_DA_BOOKS;
+if (typeof module !== "undefined") { module.exports = window.GATE_DA_BOOKS; }

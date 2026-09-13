@@ -1,0 +1,160 @@
+/* ==========================================================================
+   TCS iON GATE Virtual Scientific Calculator Replica Styles
+   ========================================================================== */
+
+.gate-calc-container {
+  max-width: 620px;
+  margin: 0 auto;
+  background-color: #2D3748;
+  border-radius: 8px;
+  border: 2px solid #4A5568;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  padding: 14px;
+  user-select: none;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #FFFFFF;
+}
+
+.calc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #4A5568;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #CBD5E0;
+}
+
+.calc-display-wrap {
+  background-color: #E2E8F0;
+  border: 2px inset #718096;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  text-align: right;
+  color: #000;
+}
+
+.calc-formula-line {
+  font-size: 0.8rem;
+  color: #718096;
+  min-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calc-main-display {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-family: 'Consolas', monospace;
+  overflow-x: auto;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+}
+
+.calc-mode-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.78rem;
+  color: #E2E8F0;
+}
+
+.calc-mode-bar label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.calc-mode-bar input[type="radio"],
+.calc-mode-bar input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.calc-btn {
+  padding: 10px 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid #4A5568;
+  background: linear-gradient(to bottom, #4A5568, #2D3748);
+  color: #F7FAFC;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.1s ease;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+}
+
+.calc-btn:hover {
+  background: linear-gradient(to bottom, #718096, #4A5568);
+}
+
+.calc-btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+/* Number buttons */
+.calc-btn.num-btn {
+  background: linear-gradient(to bottom, #EDF2F7, #CBD5E0);
+  color: #1A202C;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.calc-btn.num-btn:hover {
+  background: linear-gradient(to bottom, #FFFFFF, #E2E8F0);
+}
+
+/* Operator & Special buttons */
+.calc-btn.op-btn {
+  background: linear-gradient(to bottom, #4A5568, #2D3748);
+  color: #ECC94B;
+}
+
+.calc-btn.clear-btn {
+  background: linear-gradient(to bottom, #E53E3E, #9B2C2C);
+  color: #FFF;
+}
+
+.calc-btn.clear-btn:hover {
+  background: linear-gradient(to bottom, #FC8181, #E53E3E);
+}
+
+.calc-btn.eq-btn {
+  background: linear-gradient(to bottom, #38A169, #22543D);
+  color: #FFF;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.calc-btn.eq-btn:hover {
+  background: linear-gradient(to bottom, #48BB78, #38A169);
+}
+
+.calc-btn.mem-btn {
+  background: linear-gradient(to bottom, #3182CE, #2B6CB0);
+  color: #FFF;
+  font-size: 0.78rem;
+}
+
+.calc-info-box {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background-color: #1A202C;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #A0AEC0;
+  line-height: 1.4;
+}

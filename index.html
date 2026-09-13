@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GATE DA 2027 Master Portal | Crack Data Science & AI</title>
+  <meta name="description" content="Complete preparation portal for GATE DA 2027. 9 core subjects, 59 chapters, 279 video lectures, official PDF handbooks, interactive practice questions, formula cheatsheets, and TCS iON virtual calculator." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  
+  <!-- FontAwesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  
+  <!-- KaTeX for Beautiful Mathematical and LaTeX Rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  
+  <!-- App Styles -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/calculator.css" />
+</head>
+<body>
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <div class="app-shell">
+    
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar" id="appSidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div>
+          <div class="brand-title">GATE <span style="color:var(--accent-amber);">DA</span> 2027</div>
+          <div style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">Data Science & AI Portal</div>
+        </div>
+      </div>
+
+      <!-- Readiness Widget in Sidebar -->
+      <div style="padding: 16px 20px 10px; border-bottom: 1px solid var(--border-color);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:0.78rem;">
+          <span style="color:var(--text-muted); font-weight:600;">Overall Readiness</span>
+          <span style="color:var(--accent-amber); font-weight:700;" id="statGlobalPct">0%</span>
+        </div>
+        <div class="progress-track" style="height:6px;">
+          <div class="progress-fill" id="globalProgressBar" style="width:0%;"></div>
+        </div>
+        <div style="font-size:0.72rem; color:var(--text-faint); margin-top:5px; text-align:right;">
+          <span id="statWatchedVideos">0 / 279</span> lectures
+        </div>
+      </div>
+
+      <!-- Main Navigation -->
+      <div class="sidebar-section-title">Navigation</div>
+      <nav class="sidebar-nav">
+        <div class="nav-link-item active" id="nav-dashboard" onclick="GateApp.showView('dashboard')">
+          <i class="fa-solid fa-table-columns"></i>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-link-item" id="nav-player" onclick="GateApp.showView('player')">
+          <i class="fa-solid fa-circle-play" style="color:var(--accent-amber);"></i>
+          <span>Live Course Player</span>
+          <span class="badge-count" style="background:var(--accent-amber-glow); color:var(--accent-amber);">Watch</span>
+        </div>
+        <div class="nav-link-item" id="nav-plan" onclick="GateApp.showView('plan')">
+          <i class="fa-solid fa-calendar-check" style="color:var(--emerald);"></i>
+          <span>145-Day Study Plan</span>
+          <span class="badge-count" style="background:var(--emerald-glow); color:var(--emerald); font-weight:700;">Sept 14</span>
+        </div>
+        <div class="nav-link-item" id="nav-syllabus" onclick="GateApp.showView('syllabus')">
+          <i class="fa-solid fa-compass"></i>
+          <span>Syllabus & Roadmap</span>
+          <span class="badge-count">2027</span>
+        </div>
+        <div class="nav-link-item" id="nav-quiz" onclick="GateApp.showView('quiz')">
+          <i class="fa-solid fa-vial-circle-check"></i>
+          <span>Practice Arena & Mock</span>
+          <span class="badge-count">MCQ/NAT</span>
+        </div>
+        <div class="nav-link-item" id="nav-formulas" onclick="GateApp.showView('formulas')">
+          <i class="fa-solid fa-square-root-variable"></i>
+          <span>Formula Cheatsheets</span>
+        </div>
+        <div class="nav-link-item" id="nav-books" onclick="GateApp.showView('books')">
+          <i class="fa-solid fa-book"></i>
+          <span>Standard Textbooks</span>
+        </div>
+        <div class="nav-link-item" id="nav-calculator" onclick="GateApp.showView('calculator')">
+          <i class="fa-solid fa-calculator"></i>
+          <span>GATE Virtual Calculator</span>
+        </div>
+        <div class="nav-link-item" id="nav-notes" onclick="GateApp.showView('notes')">
+          <i class="fa-solid fa-note-sticky"></i>
+          <span>My Notes & Journal</span>
+        </div>
+
+        <div class="sidebar-section-title" style="margin-top:10px;">GATE DA Core Subjects</div>
+        <div id="sidebarSubjectList">
+          <!-- Dynamically populated subjects with live progress bars -->
+        </div>
+      </nav>
+    </aside>
+
+    <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+    <div class="main-wrapper">
+      
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn mobile-menu-btn" id="mobileSidebarToggle" aria-label="Toggle Menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <!-- Search Bar -->
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search 279+ lectures, chapters, books, topics..." autocomplete="off" />
+            <div class="search-dropdown" id="globalSearchDropdown"></div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Live Countdown -->
+          <div class="exam-countdown-badge">
+            <div class="pulse-dot"></div>
+            <span id="examCountdownText">GATE DA 2027</span>
+          </div>
+
+          <!-- Pomodoro Timer -->
+          <div class="pomodoro-pill" id="pomodoroBtn" onclick="GateApp.togglePomodoro()" title="Click to start 25-min focus session">
+            <i class="fa-solid fa-stopwatch" style="color:var(--emerald);"></i> Focus: 25:00
+          </div>
+
+          <!-- Theme Toggle -->
+          <button class="icon-btn" id="themeToggleBtn" title="Toggle Dark/Light Mode">
+            <i class="fa-solid fa-sun" style="color:var(--accent-amber);"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT BODY -->
+      <main class="content-body">
+        
+        <!-- VIEW 1: DASHBOARD -->
+        <section id="dashboardView">
+          <div class="hero-banner">
+            <div class="hero-tag"><i class="fa-solid fa-fire"></i> Target: Top 50 All India Rank</div>
+            <h1 class="hero-title">GATE DA 2027 Mission Control</h1>
+            <p class="hero-subtitle">
+              Every single concept, lecture, handbook, textbook, and formula you need to crack GATE Data Science & AI. Structured for deep mastery.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:12px;">
+              <button class="btn-primary" onclick="GateApp.showView('player')">
+                <i class="fa-solid fa-circle-play"></i> Open Live Video Player
+              </button>
+              <button class="btn-secondary" onclick="GateApp.showSubject('probability')">
+                <i class="fa-solid fa-dice"></i> Probability & Statistics
+              </button>
+              <button class="btn-secondary" onclick="GateApp.showView('syllabus')">
+                <i class="fa-solid fa-route"></i> 4-Phase Roadmap
+              </button>
+              <button class="btn-secondary" onclick="GateApp.showView('calculator')">
+                <i class="fa-solid fa-calculator"></i> Virtual Calculator
+              </button>
+            </div>
+          </div>
+
+          <!-- Starting Tomorrow: Day 1 Mission Card -->
+          <div class="hero-banner" style="background: linear-gradient(135deg, rgba(255, 153, 0, 0.1) 0%, var(--bg-card) 100%); border-color: var(--accent-amber); padding: 22px; margin-bottom: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div>
+                <span class="hero-tag" style="background:var(--accent-amber); color:#000; font-weight:800;"><i class="fa-solid fa-flag-checkered"></i> 145-Day Plan • Starting Tomorrow (Sept 14)</span>
+                <h3 style="font-size:1.2rem; font-weight:800; margin-top:6px;">Day 1: Matrices, Types, Properties & Determinants</h3>
+                <p style="font-size:0.86rem; color:var(--text-muted); margin-bottom:0;">
+                  <strong>Lectures:</strong> L1 & L2 in Matrices and Linear Algebra • <strong>Target:</strong> Watch lectures & solve 10 determinant problems.
+                </p>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-primary btn-sm" onclick="GateApp.showSubject('matrices')">
+                  <i class="fa-solid fa-play"></i> Start Day 1 Study
+                </button>
+                <button class="btn-secondary btn-sm" onclick="GateApp.showView('plan')">
+                  <i class="fa-solid fa-calendar-days"></i> Full 145-Day Plan
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Featured Daily Video Embed Player on Dashboard -->
+          <div class="hero-banner" style="background:var(--bg-card); padding:20px; margin-bottom:28px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+              <div>
+                <span class="hero-tag" style="margin-bottom:4px;"><i class="fa-solid fa-star"></i> Featured Starting Lecture</span>
+                <h3 style="font-size:1.15rem; font-weight:700;">Calculus & Optimization: L1 - Introduction to Functions</h3>
+              </div>
+              <button class="btn-secondary btn-sm" onclick="GateApp.showSubject('calculus-opt')">
+                Open Full Subject <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+            
+            <div style="width:100%; aspect-ratio:16/9; max-height:460px; background:#000; border-radius:var(--radius-md); overflow:hidden; box-shadow:var(--shadow);">
+              <iframe src="https://www.youtube.com/embed/MVTL8oUWRFY?rel=0&modestbranding=1" style="width:100%; height:100%; border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+          </div>
+
+          <!-- Stat Counters -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon-wrap" style="background:var(--accent-amber-glow); color:var(--accent-amber);">
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <div>
+                <div class="stat-val">9</div>
+                <div class="stat-label">Core Subjects</div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrap" style="background:var(--blue-glow); color:var(--blue);">
+                <i class="fa-solid fa-video"></i>
+              </div>
+              <div>
+                <div class="stat-val">279</div>
+                <div class="stat-label">Curated Video Lectures</div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrap" style="background:var(--emerald-glow); color:var(--emerald);">
+                <i class="fa-solid fa-book-open"></i>
+              </div>
+              <div>
+                <div class="stat-val">9</div>
+                <div class="stat-label">Official Handbooks (PDF)</div>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon-wrap" style="background:rgba(139, 92, 246, 0.15); color:var(--purple);">
+                <i class="fa-solid fa-bullseye"></i>
+              </div>
+              <div>
+                <div class="stat-val">70+</div>
+                <div class="stat-label">Target Marks in DA</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subject Cards Grid -->
+          <div class="section-heading-row">
+            <h2 class="section-title">
+              <i class="fa-solid fa-graduation-cap" style="color:var(--accent-amber);"></i> Complete GATE DA Curriculum
+            </h2>
+          </div>
+          <div class="subjects-grid" id="dashboardSubjectsGrid">
+            <!-- Rendered by GateApp.renderDashboard() -->
+          </div>
+        </section>
+
+        <!-- VIEW: 145-DAY BATTLE PLAN -->
+        <section id="planView" style="display:none;">
+          <div id="planViewContent">
+            <!-- Rendered dynamically by GateApp.renderPlanView() -->
+          </div>
+        </section>
+
+        <!-- VIEW 2: SUBJECT DETAIL VIEW WITH MASTER EMBEDDED PLAYER -->
+        <section id="subjectView" style="display:none;">
+          <div id="subjectViewContent">
+            <!-- Rendered dynamically by GateApp.renderSubjectDetail() -->
+          </div>
+        </section>
+
+        <!-- VIEW 3: DEDICATED LIVE COURSE PLAYER -->
+        <section id="playerView" style="display:none;">
+          <div id="playerViewContent">
+            <!-- Rendered dynamically by GateApp.renderCoursePlayer() -->
+          </div>
+        </section>
+
+        <!-- VIEW 4: STANDARD BOOKS LIBRARY -->
+        <section id="booksView" style="display:none;">
+          <div id="booksViewContent">
+            <!-- Rendered by GateApp.renderBooks() -->
+          </div>
+        </section>
+
+        <!-- VIEW 5: SYLLABUS & ROADMAP -->
+        <section id="syllabusView" style="display:none;">
+          <div id="syllabusViewContent">
+            <!-- Rendered by GateApp.renderSyllabus() -->
+          </div>
+        </section>
+
+        <!-- VIEW 6: PRACTICE ARENA & MOCKS -->
+        <section id="quizView" style="display:none;">
+          <div class="hero-banner">
+            <div class="hero-tag"><i class="fa-solid fa-vial"></i> Interactive Testing Ground</div>
+            <h1 class="hero-title">GATE DA Practice Arena & Problem Solving</h1>
+            <p class="hero-subtitle">
+              Authentic MCQ, MSQ, and NAT questions strictly aligned with the GATE DA exam pattern. Test your grasp, verify derivations, and train under negative marking rules.
+            </p>
+            <div class="chapter-pills-row" style="margin-bottom:0;">
+              <div class="chapter-pill active" onclick="GateQuiz.filterSubject('all')">All Subjects</div>
+              <div class="chapter-pill" onclick="GateQuiz.filterSubject('Linear Algebra')">Linear Algebra</div>
+              <div class="chapter-pill" onclick="GateQuiz.filterSubject('Probability')">Probability & Stats</div>
+              <div class="chapter-pill" onclick="GateQuiz.filterSubject('Machine Learning')">Machine Learning</div>
+              <div class="chapter-pill" onclick="GateQuiz.filterSubject('Database')">DBMS</div>
+              <div class="chapter-pill" onclick="GateQuiz.filterSubject('Python')">Python / DSA</div>
+              <div class="chapter-pill" onclick="GateQuiz.filterSubject('Optimization')">Calculus</div>
+            </div>
+          </div>
+
+          <div id="quizQuestionsList">
+            <!-- Rendered by GateQuiz.renderQuestions() -->
+          </div>
+        </section>
+
+        <!-- VIEW 7: FORMULA CHEATSHEETS -->
+        <section id="formulasView" style="display:none;">
+          <div id="formulasViewContent">
+            <!-- Rendered by GateApp.renderFormulas() -->
+          </div>
+        </section>
+
+        <!-- VIEW 8: GATE VIRTUAL SCIENTIFIC CALCULATOR -->
+        <section id="calculatorView" style="display:none;">
+          <div class="hero-banner">
+            <div class="hero-tag"><i class="fa-solid fa-calculator"></i> Exam Simulation</div>
+            <h1 class="hero-title">Official TCS iON GATE Virtual Calculator Replica</h1>
+            <p class="hero-subtitle">
+              No physical calculators are permitted in GATE. Master the exact operational syntax, memory storage, brackets, and scientific functions of the TCS iON on-screen interface.
+            </p>
+          </div>
+
+          <div class="gate-calc-container">
+            <div class="calc-header">
+              <span>GATE 2027 VIRTUAL CALCULATOR</span>
+              <span>SCIENTIFIC MODE</span>
+            </div>
+
+            <div class="calc-display-wrap">
+              <div class="calc-formula-line" id="calcFormula"></div>
+              <div class="calc-main-display" id="calcDisplay">0</div>
+            </div>
+
+            <div class="calc-mode-bar">
+              <label><input type="radio" name="angleUnit" id="calcRad" checked /> Radian</label>
+              <label><input type="radio" name="angleUnit" id="calcDeg" /> Degree</label>
+              <label style="margin-left:auto;"><input type="checkbox" id="calcInv" /> Inv</label>
+              <label><input type="checkbox" id="calcHyp" /> Hyp</label>
+            </div>
+
+            <!-- Calculator Button Grid -->
+            <div class="calc-grid">
+              <!-- Row 1 -->
+              <button class="calc-btn mem-btn" onclick="GateCalc.mem('MC')">MC</button>
+              <button class="calc-btn mem-btn" onclick="GateCalc.mem('MR')">MR</button>
+              <button class="calc-btn mem-btn" onclick="GateCalc.mem('MS')">MS</button>
+              <button class="calc-btn mem-btn" onclick="GateCalc.mem('M+')">M+</button>
+              <button class="calc-btn mem-btn" onclick="GateCalc.mem('M-')">M-</button>
+              <button class="calc-btn clear-btn" onclick="GateCalc.backspace()">←</button>
+
+              <!-- Row 2 -->
+              <button class="calc-btn" id="btnSin" onclick="GateCalc.unary('sin')">sin</button>
+              <button class="calc-btn" id="btnCos" onclick="GateCalc.unary('cos')">cos</button>
+              <button class="calc-btn" id="btnTan" onclick="GateCalc.unary('tan')">tan</button>
+              <button class="calc-btn" id="btnLn" onclick="GateCalc.unary('ln')">ln</button>
+              <button class="calc-btn" id="btnLog" onclick="GateCalc.unary('log')">log</button>
+              <button class="calc-btn clear-btn" onclick="GateCalc.clear()">C</button>
+
+              <!-- Row 3 -->
+              <button class="calc-btn" onclick="GateCalc.unary('sqr')">x²</button>
+              <button class="calc-btn" onclick="GateCalc.unary('cube')">x³</button>
+              <button class="calc-btn op-btn" onclick="GateCalc.pressOp('^')">x^y</button>
+              <button class="calc-btn" onclick="GateCalc.unary('sqrt')">√x</button>
+              <button class="calc-btn" onclick="GateCalc.unary('cbrt')">∛x</button>
+              <button class="calc-btn op-btn" onclick="GateCalc.pressOp('÷')">÷</button>
+
+              <!-- Row 4 -->
+              <button class="calc-btn" onclick="GateCalc.unary('fact')">n!</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(7)">7</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(8)">8</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(9)">9</button>
+              <button class="calc-btn" onclick="GateCalc.unary('recip')">1/x</button>
+              <button class="calc-btn op-btn" onclick="GateCalc.pressOp('×')">×</button>
+
+              <!-- Row 5 -->
+              <button class="calc-btn" onclick="GateCalc.unary('pi')">π</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(4)">4</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(5)">5</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(6)">6</button>
+              <button class="calc-btn op-btn" onclick="GateCalc.pressOp('(')">(</button>
+              <button class="calc-btn op-btn" onclick="GateCalc.pressOp('-')">-</button>
+
+              <!-- Row 6 -->
+              <button class="calc-btn" onclick="GateCalc.unary('e')">e</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(1)">1</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(2)">2</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(3)">3</button>
+              <button class="calc-btn op-btn" onclick="GateCalc.pressOp(')')">)</button>
+              <button class="calc-btn op-btn" onclick="GateCalc.pressOp('+')">+</button>
+
+              <!-- Row 7 -->
+              <button class="calc-btn" onclick="GateCalc.unary('abs')">|x|</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressNum(0)">0</button>
+              <button class="calc-btn num-btn" onclick="GateCalc.pressDot()">.</button>
+              <button class="calc-btn eq-btn" style="grid-column: span 3;" onclick="GateCalc.equals()">=</button>
+            </div>
+
+            <div class="calc-info-box">
+              <strong>GATE Exam Tip:</strong> For trig functions in Radian mode, ensure the <em>Radian</em> radio button is selected. For inverse trigonometric functions like arcsin, check the <em>Inv</em> box first, then click <em>asin</em>.
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 9: NOTES & JOURNAL -->
+        <section id="notesView" style="display:none;">
+          <div id="notesViewContent">
+            <!-- Rendered by GateApp.renderNotesView() -->
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================== THEATER / STUDY ROOM MODAL ==================== -->
+  <div class="theater-modal" id="theaterModal">
+    <div class="theater-header">
+      <div class="theater-header-left">
+        <div class="brand-logo" style="width:32px; height:32px; font-size:1rem;">
+          <i class="fa-solid fa-play"></i>
+        </div>
+        <div>
+          <div class="theater-title" id="theaterVideoTitle">Lecture Title</div>
+          <div style="font-size:0.75rem; color:var(--text-muted);" id="theaterChapterTitle">Subject • Chapter</div>
+        </div>
+      </div>
+      
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="btn-secondary btn-sm" id="theaterMarkWatchedBtn" onclick="GatePlayer.toggleWatched()">
+          <i class="fa-regular fa-circle"></i> Mark as Done
+        </button>
+        <button class="icon-btn" onclick="GatePlayer.closeTheater()" title="Close Study Room (Esc)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="theater-body">
+      <!-- Main Stage -->
+      <div class="theater-main-stage">
+        <div class="player-embed-wrap" id="theaterIframeWrap">
+          <!-- Iframe inserted dynamically -->
+        </div>
+
+        <div class="player-controls-bar">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="btn-secondary btn-sm" onclick="GatePlayer.prevVideo()">
+              <i class="fa-solid fa-backward-step"></i> Previous Lecture
+            </button>
+            <button class="btn-primary btn-sm" onclick="GatePlayer.nextVideo()">
+              Next Lecture <i class="fa-solid fa-forward-step"></i>
+            </button>
+          </div>
+
+          <div style="font-size:0.8rem; color:var(--text-faint);">
+            <i class="fa-solid fa-keyboard"></i> Shortcuts: <strong>Alt + →</strong> Next | <strong>Alt + ←</strong> Prev | <strong>Esc</strong> Close
+          </div>
+        </div>
+      </div>
+
+      <!-- Playlist & Notes Drawer -->
+      <aside class="theater-sidebar">
+        <div class="theater-playlist-header">
+          <span style="font-size:0.9rem; font-weight:700;"><i class="fa-solid fa-list-ul" style="color:var(--accent-amber);"></i> Chapter Playlist</span>
+        </div>
+
+        <div class="theater-playlist-items" id="theaterPlaylistContainer">
+          <!-- Playlist items rendered dynamically -->
+        </div>
+
+        <!-- Personal Notes Section in Theater -->
+        <div class="theater-notes-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.82rem; font-weight:700;"><i class="fa-solid fa-pen-to-square"></i> Lecture Study Notes</span>
+            <span style="font-size:0.75rem; color:var(--emerald); font-weight:600;" id="theaterNotesStatus"></span>
+          </div>
+          <textarea class="notes-textarea" id="theaterNotesInput" placeholder="Type quick notes, key formulas, or questions here..." oninput="GatePlayer.saveVideoNotes()"></textarea>
+          <div style="font-size:0.72rem; color:var(--text-faint); margin-top:4px;">Auto-saved to your personal study journal.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ==================== PDF HANDBOOK VIEWER MODAL ==================== -->
+  <div class="pdf-modal" id="pdfModal">
+    <div class="pdf-dialog">
+      <div class="pdf-modal-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <i class="fa-solid fa-file-pdf" style="color:#EF4444; font-size:1.3rem;"></i>
+          <span style="font-weight:700; font-size:0.95rem;" id="pdfModalTitle">Official GATE DA Handbook</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <a class="btn-primary btn-sm" id="pdfDirectDownloadLink" href="#" download>
+            <i class="fa-solid fa-download"></i> Download PDF
+          </a>
+          <button class="icon-btn" onclick="GateApp.closePdfViewer()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <iframe class="pdf-frame" id="pdfIframe" src="about:blank"></iframe>
+    </div>
+  </div>
+
+  <!-- Data Scripts -->
+  <script src="data/subjects.js"></script>
+  <script src="data/books.js"></script>
+  <script src="data/syllabus.js"></script>
+  <script src="data/formulas.js"></script>
+  <script src="data/practice_questions.js"></script>
+  <script src="data/plan.js"></script>
+
+  <!-- Application Logic Scripts -->
+  <script src="assets/js/calculator.js"></script>
+  <script src="assets/js/quiz.js"></script>
+  <script src="assets/js/player.js"></script>
+  <script src="assets/js/app.js"></script>
+
+</body>
+</html>
